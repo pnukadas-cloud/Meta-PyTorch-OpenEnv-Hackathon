@@ -126,6 +126,12 @@ python -m unittest
 python -m server.app
 ```
 
+Visual preview:
+
+```text
+Open index.html directly in your browser for the interactive concept demo.
+```
+
 Minimal local usage:
 
 ```python
@@ -169,4 +175,3 @@ If you are submitting this to Round 1 of the Meta x PyTorch OpenEnv Hackathon ru
 > Crisis Commander is a multi-objective urban emergency response environment for training agentic systems that must balance casualties, response latency, hospital capacity, fairness, and operational cost under cascading uncertainty.
 
 That pitch is specific, technically credible, and much more memorable than a generic support or ticketing environment.
-
