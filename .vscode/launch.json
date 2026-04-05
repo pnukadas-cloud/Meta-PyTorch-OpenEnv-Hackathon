@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Crisis Commander: Demo Rollout",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/demo_run.py",
+      "console": "integratedTerminal",
+      "args": [
+        "--scenario",
+        "rush_hour_cascade",
+        "--difficulty",
+        "advanced",
+        "--steps",
+        "5"
+      ]
+    },
+    {
+      "name": "Crisis Commander: API Server",
+      "type": "python",
+      "request": "launch",
+      "module": "server.app",
+      "console": "integratedTerminal"
+    }
+  ]
+}
+
