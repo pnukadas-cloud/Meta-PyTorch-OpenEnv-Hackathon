@@ -6,6 +6,7 @@ from pathlib import Path
 
 from crisis_commander_env.models import CrisisAction, CrisisObservation
 from server.crisis_commander_environment import CrisisCommanderEnvironment
+from server.hf_strategist import HFStrategistError, generate_strategy, strategist_status
 from server.runtime import build_manifest, create_session, require_session, step_session
 
 try:
@@ -45,6 +46,10 @@ class StepSessionRequest(BaseModel):
     policy: str | None = None
 
 
+class HFStrategistRequest(BaseModel):
+    snapshot_index: int | None = None
+
+
 def _build_app():
     if FastAPI is None:
         return None
@@ -72,7 +77,9 @@ def _build_app():
 
     @app.get("/api/manifest")
     def manifest():
-        return build_manifest()
+        payload = build_manifest()
+        payload["hf"] = strategist_status()
+        return payload
 
     @app.post("/api/sessions")
     def start_session(payload: CreateSessionRequest):
@@ -110,6 +117,33 @@ def _build_app():
         return {
             "session_id": session_id,
             "snapshot": snapshot,
+        }
+
+    @app.get("/api/hf/status")
+    def hf_status():
+        return strategist_status()
+
+    @app.post("/api/sessions/{session_id}/advisor")
+    def hf_advisor(session_id: str, payload: HFStrategistRequest):
+        try:
+            record = require_session(session_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        snapshot = record.latest_snapshot
+        if snapshot is None:
+            raise HTTPException(status_code=400, detail="Session has no snapshot yet.")
+
+        try:
+            result = generate_strategy(snapshot)
+        except HFStrategistError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except Exception as exc:  # pragma: no cover - surfaced to UI
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+        return {
+            "session_id": session_id,
+            "advisor": result,
         }
 
     @app.get("/ui", include_in_schema=False)

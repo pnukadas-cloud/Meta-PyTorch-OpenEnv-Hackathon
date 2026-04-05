@@ -16,6 +16,7 @@ dependencies = [
   "fastapi>=0.111.0",
   "uvicorn>=0.30.0",
   "pydantic>=2.8.0",
+  "huggingface_hub>=0.34.0",
   "openenv-core>=0.1.0",
 ]
 
@@ -26,4 +27,3 @@ dev = [
 
 [tool.setuptools.packages.find]
 include = ["crisis_commander_env*", "server*"]
-

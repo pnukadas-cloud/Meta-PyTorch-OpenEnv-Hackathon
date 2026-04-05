@@ -135,7 +135,7 @@ Open index.html directly in your browser for the interactive concept demo.
 Live browser app:
 
 ```bash
-python -m pip install fastapi uvicorn pydantic
+python -m pip install fastapi uvicorn pydantic huggingface_hub
 python -m server.app
 ```
 
@@ -147,6 +147,30 @@ http://127.0.0.1:8000/
 
 The browser UI will create a real simulator session, run the baseline policies against the Python
 environment, and display live snapshots from the backend.
+
+## Hugging Face Model Integration
+
+The browser app now includes a real Hugging Face strategist panel backed by a live instruct model.
+
+- Default model: `Qwen/Qwen2.5-7B-Instruct`
+- Integration path: `huggingface_hub.InferenceClient`
+- UI action: click `Ask HF Strategist` on the live app page
+
+Authenticate either by exporting `HF_TOKEN` or logging in locally:
+
+```bash
+hf auth login
+```
+
+Or on PowerShell:
+
+```powershell
+$env:HF_TOKEN="your_token_here"
+python -m server.app
+```
+
+The strategist endpoint sends the current simulator snapshot to Hugging Face and returns a short
+operational recommendation grounded in the live mission state.
 
 Minimal local usage:
 

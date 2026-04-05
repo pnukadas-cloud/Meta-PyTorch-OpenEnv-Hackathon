@@ -6,6 +6,7 @@ const state = {
   historyIndex: 0,
   autoplayTimer: null,
   busy: false,
+  hfAdvisor: null,
 };
 
 const elements = {
@@ -45,6 +46,12 @@ const elements = {
   visualScenarioTitle: document.querySelector("#visual-scenario-title"),
   visualPrioritySignal: document.querySelector("#visual-priority-signal"),
   visualWinningMove: document.querySelector("#visual-winning-move"),
+  askHf: document.querySelector("#ask-hf"),
+  hfStatusPill: document.querySelector("#hf-status-pill"),
+  hfModelPill: document.querySelector("#hf-model-pill"),
+  hfTitle: document.querySelector("#hf-title"),
+  hfDescription: document.querySelector("#hf-description"),
+  hfOutput: document.querySelector("#hf-output"),
 };
 
 async function init() {
@@ -82,6 +89,9 @@ function bindControls() {
     stopAutoplay();
     runLiveStep();
   });
+  elements.askHf.addEventListener("click", () => {
+    requestHFAdvice();
+  });
 }
 
 function hydrateControls(manifest) {
@@ -95,6 +105,10 @@ function hydrateControls(manifest) {
 }
 
 function renderScenarioTabs() {
+  if (!state.manifest) {
+    return;
+  }
+
   elements.tabs.innerHTML = "";
   state.manifest.scenarios.forEach((scenario, index) => {
     const button = document.createElement("button");
@@ -139,6 +153,7 @@ async function resetSession() {
     state.sessionId = response.session_id;
     state.snapshots = [response.snapshot];
     state.historyIndex = 0;
+    state.hfAdvisor = null;
     render();
   } catch (error) {
     renderErrorState(error.message);
@@ -163,7 +178,11 @@ async function runLiveStep() {
 
     const snapshot = response.snapshot;
     const lastSnapshot = state.snapshots[state.snapshots.length - 1];
-    const isNewTurn = !lastSnapshot || snapshot.turn !== lastSnapshot.turn || snapshot.reward_total !== lastSnapshot.reward_total;
+    const isNewTurn =
+      !lastSnapshot ||
+      snapshot.turn !== lastSnapshot.turn ||
+      snapshot.reward_total !== lastSnapshot.reward_total;
+
     if (isNewTurn) {
       state.snapshots.push(snapshot);
       state.historyIndex = state.snapshots.length - 1;
@@ -184,15 +203,45 @@ async function runLiveStep() {
   }
 }
 
+async function requestHFAdvice() {
+  if (!state.sessionId || state.busy) {
+    return;
+  }
+
+  setBusy(true);
+  elements.hfStatusPill.textContent = "thinking";
+  elements.hfOutput.innerHTML = `
+    <article class="strategist-card">
+      <h4>Generating advice</h4>
+      <p>Sending the live simulator snapshot to the Hugging Face strategist model...</p>
+    </article>
+  `;
+
+  try {
+    const response = await api(`/api/sessions/${state.sessionId}/advisor`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    state.hfAdvisor = response.advisor;
+  } catch (error) {
+    state.hfAdvisor = {
+      configured: false,
+      error: true,
+      model: state.manifest?.hf?.model || "unavailable",
+      provider: state.manifest?.hf?.provider || "auto",
+      content: error.message,
+    };
+  } finally {
+    setBusy(false);
+    renderHFPanel();
+  }
+}
+
 function browseHistory(direction) {
   if (!state.snapshots.length) {
     return;
   }
-  state.historyIndex = clamp(
-    state.historyIndex + direction,
-    0,
-    state.snapshots.length - 1,
-  );
+  state.historyIndex = clamp(state.historyIndex + direction, 0, state.snapshots.length - 1);
   render();
 }
 
@@ -223,6 +272,7 @@ function stopAutoplay() {
 
 function render() {
   if (!state.manifest || !state.snapshots.length) {
+    renderHFPanel();
     return;
   }
 
@@ -261,6 +311,7 @@ function render() {
   renderIncidents(snapshot.incidents);
   renderResources(snapshot.resources);
   renderEvents(snapshot.events);
+  renderHFPanel();
 }
 
 function renderSessionBanner(snapshot, isLatest) {
@@ -324,14 +375,13 @@ function renderTimeline() {
   elements.timelineTrack.style.setProperty("--turn-count", state.snapshots.length || 1);
   elements.timelineTrack.innerHTML = state.snapshots
     .map(
-      (snapshot, index) => `
+      (_, index) => `
         <button
           class="timeline-node ${index === state.historyIndex ? "active" : index < state.historyIndex ? "completed" : ""}"
           type="button"
           aria-label="Go to snapshot ${index}"
           data-index="${index}"
-        >
-        </button>
+        ></button>
       `,
     )
     .join("");
@@ -393,9 +443,63 @@ function renderEvents(events) {
     .join("");
 }
 
+function renderHFPanel() {
+  const hf = state.manifest?.hf;
+  const advisor = state.hfAdvisor;
+  const configured = Boolean(hf?.configured);
+
+  elements.hfStatusPill.textContent = advisor?.error
+    ? "error"
+    : advisor
+      ? "ready"
+      : configured
+        ? "online"
+        : "token needed";
+  elements.hfModelPill.textContent = hf?.model || "model unavailable";
+  elements.hfTitle.textContent = configured
+    ? "Hugging Face command advisor is available"
+    : "Connect a Hugging Face token to activate AI advice";
+  elements.hfDescription.textContent = advisor?.error
+    ? advisor.content
+    : hf?.message ||
+      "The app can call a real Hugging Face instruct model to interpret the live simulator state and suggest a next move.";
+
+  if (advisor?.content && !advisor.error) {
+    elements.hfOutput.innerHTML = `
+      <article class="strategist-card">
+        <h4>${escapeHtml(advisor.model)} via ${escapeHtml(advisor.provider)}</h4>
+        <p>${escapeHtml(advisor.content)}</p>
+      </article>
+    `;
+    return;
+  }
+
+  if (advisor?.error) {
+    elements.hfOutput.innerHTML = `
+      <article class="strategist-card">
+        <h4>HF strategist unavailable</h4>
+        <p>${escapeHtml(advisor.content)}</p>
+      </article>
+    `;
+    return;
+  }
+
+  elements.hfOutput.innerHTML = `
+    <article class="strategist-card">
+      <h4>How to use it</h4>
+      <p>${escapeHtml(
+        configured
+          ? "Click 'Ask HF Strategist' to send the current mission snapshot to the model and receive an actionable recommendation."
+          : "Set HF_TOKEN or run `hf auth login` in the same environment as the server, then restart the app and click 'Ask HF Strategist'.",
+      )}</p>
+    </article>
+  `;
+}
+
 function renderLoadingState() {
   elements.sessionState.textContent = "Connecting to backend...";
   elements.sessionDetail.textContent = "Start the FastAPI server, then reload this page if needed.";
+  renderHFPanel();
 }
 
 function renderErrorState(message) {
@@ -410,6 +514,7 @@ function renderErrorState(message) {
       <p>${escapeHtml(message)}</p>
     </article>
   `;
+  renderHFPanel();
 }
 
 function setBusy(value) {
@@ -417,6 +522,7 @@ function setBusy(value) {
   elements.resetSession.disabled = value;
   elements.stepSession.disabled = value;
   elements.autoPlay.disabled = value && !state.autoplayTimer;
+  elements.askHf.disabled = value;
 }
 
 async function api(path, options = {}) {
