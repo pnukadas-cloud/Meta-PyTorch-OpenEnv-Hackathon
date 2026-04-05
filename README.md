@@ -132,6 +132,22 @@ Visual preview:
 Open index.html directly in your browser for the interactive concept demo.
 ```
 
+Live browser app:
+
+```bash
+python -m pip install fastapi uvicorn pydantic
+python -m server.app
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/
+```
+
+The browser UI will create a real simulator session, run the baseline policies against the Python
+environment, and display live snapshots from the backend.
+
 Minimal local usage:
 
 ```python

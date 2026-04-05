@@ -67,7 +67,7 @@
           <section class="hero-visual panel">
             <div class="visual-header">
               <span>Live mission storyboard</span>
-              <strong>Rush Hour Cascade</strong>
+              <strong id="visual-scenario-title">Rush Hour Cascade</strong>
             </div>
             <div class="city-grid">
               <div class="city-node active" data-zone="Central"></div>
@@ -82,11 +82,11 @@
             <div class="visual-feed">
               <div>
                 <span class="feed-label">Priority signal</span>
-                <strong>Hazmat plume scheduled at turn 2</strong>
+                <strong id="visual-priority-signal">Hazmat plume scheduled at turn 2</strong>
               </div>
               <div>
                 <span class="feed-label">Winning move</span>
-                <strong>Pre-stage drone + police before the spillover lands</strong>
+                <strong id="visual-winning-move">Pre-stage drone + police before the spillover lands</strong>
               </div>
             </div>
           </section>
@@ -107,10 +107,34 @@
           <div class="command-layout">
             <aside class="scenario-column panel">
               <div class="panel-topline">
-                <span>Scenario selector</span>
-                <span id="difficulty-pill">advanced</span>
+                <span>Live backend session</span>
+                <span id="difficulty-pill">connecting</span>
+              </div>
+              <div class="live-status">
+                <strong id="session-state">Booting command center...</strong>
+                <p id="session-detail">
+                  The browser will connect to the Python backend and create a real simulator session.
+                </p>
               </div>
               <div class="scenario-tabs" id="scenario-tabs"></div>
+              <div class="control-stack">
+                <label class="control-field">
+                  <span>Difficulty</span>
+                  <select id="difficulty-select"></select>
+                </label>
+                <label class="control-field">
+                  <span>Policy</span>
+                  <select id="policy-select"></select>
+                </label>
+                <label class="control-field">
+                  <span>Seed</span>
+                  <input id="seed-input" type="number" value="7" min="1" max="99999" />
+                </label>
+                <div class="action-row">
+                  <button class="control-button" id="reset-session" type="button">Reset Mission</button>
+                  <button class="control-button accent" id="step-session" type="button">Run Next Step</button>
+                </div>
+              </div>
               <div class="mission-brief">
                 <h3 id="scenario-title"></h3>
                 <p id="scenario-description"></p>
@@ -154,13 +178,13 @@
 
               <article class="panel playback-panel">
                 <div class="panel-topline">
-                  <span>Rollout playback</span>
+                  <span>Session playback</span>
                   <span id="autoplay-indicator">manual</span>
                 </div>
                 <div class="timeline-controls">
-                  <button class="control-button" id="prev-turn" type="button">Prev</button>
+                  <button class="control-button" id="prev-turn" type="button">Prev Snapshot</button>
                   <button class="control-button accent" id="auto-play" type="button">Auto Play</button>
-                  <button class="control-button" id="next-turn" type="button">Next</button>
+                  <button class="control-button" id="next-turn" type="button">Next Snapshot</button>
                 </div>
                 <div class="timeline-track" id="timeline-track"></div>
                 <div class="turn-callout">
@@ -193,7 +217,7 @@
               <article class="panel event-panel">
                 <div class="panel-topline">
                   <span>Mission log</span>
-                  <span>real-time narrative</span>
+                  <span id="log-mode">real-time narrative</span>
                 </div>
                 <div class="event-list" id="event-list"></div>
               </article>
