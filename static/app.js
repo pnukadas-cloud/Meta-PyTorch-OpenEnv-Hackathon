@@ -7,6 +7,7 @@ const state = {
   autoplayTimer: null,
   busy: false,
   hfAdvisor: null,
+  apiBase: resolveApiBase(),
 };
 
 const elements = {
@@ -498,7 +499,7 @@ function renderHFPanel() {
 
 function renderLoadingState() {
   elements.sessionState.textContent = "Connecting to backend...";
-  elements.sessionDetail.textContent = "Start the FastAPI server, then reload this page if needed.";
+  elements.sessionDetail.textContent = `Trying ${state.apiBase}`;
   renderHFPanel();
 }
 
@@ -507,7 +508,7 @@ function renderErrorState(message) {
   elements.sessionDetail.textContent = message;
   elements.actionHeadline.textContent = "Run python -m server.app";
   elements.actionNotes.textContent =
-    "Open the app from http://127.0.0.1:8000/ after the server starts so the UI can talk to the Python environment.";
+    `Start the server, then open http://127.0.0.1:8000/ or keep this page open and make sure the backend is reachable at ${state.apiBase}.`;
   elements.eventList.innerHTML = `
     <article class="event-card">
       <strong>Connection error</strong>
@@ -526,13 +527,18 @@ function setBusy(value) {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(path, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  let response;
+  try {
+    response = await fetch(buildApiUrl(path), {
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+  } catch (error) {
+    throw new Error(`Could not reach backend at ${state.apiBase}`);
+  }
 
   let payload = null;
   try {
@@ -542,11 +548,33 @@ async function api(path, options = {}) {
   }
 
   if (!response.ok) {
-    const detail = payload?.detail || `Request failed with status ${response.status}`;
+    const detail =
+      payload?.detail || `Request failed with status ${response.status} from ${buildApiUrl(path)}`;
     throw new Error(detail);
   }
 
   return payload;
+}
+
+function resolveApiBase() {
+  const params = new URLSearchParams(window.location.search);
+  const explicitBase = params.get("api");
+  if (explicitBase) {
+    return explicitBase.replace(/\/+$/, "");
+  }
+  if (window.location.protocol === "file:") {
+    return "http://127.0.0.1:8000";
+  }
+  if (window.location.hostname.endsWith("github.io")) {
+    return "http://127.0.0.1:8000";
+  }
+  return window.location.origin;
+}
+
+function buildApiUrl(path) {
+  const normalizedBase = state.apiBase.replace(/\/+$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${normalizedBase}${normalizedPath}`;
 }
 
 function buildPrioritySignal(snapshot) {
