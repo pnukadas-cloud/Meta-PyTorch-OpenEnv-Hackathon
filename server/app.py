@@ -66,7 +66,8 @@ def _build_app():
         )
         app.mount("/openenv", openenv_app)
 
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    if StaticFiles is not None and STATIC_DIR.exists():
+        app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
     @app.get("/api/health")
     def health():
@@ -149,10 +150,14 @@ def _build_app():
 
     @app.get("/ui", include_in_schema=False)
     def ui():
+        if not INDEX_FILE.exists():
+            raise HTTPException(status_code=503, detail="UI assets are missing from this deployment.")
         return FileResponse(INDEX_FILE)
 
     @app.get("/", include_in_schema=False)
     def root():
+        if not INDEX_FILE.exists():
+            raise HTTPException(status_code=503, detail="UI assets are missing from this deployment.")
         return FileResponse(INDEX_FILE)
 
     return app
