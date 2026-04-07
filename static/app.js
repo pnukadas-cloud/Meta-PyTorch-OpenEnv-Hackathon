@@ -8,7 +8,249 @@ const state = {
   busy: false,
   hfAdvisor: null,
   apiBase: resolveApiBase(),
+  offlineMode: false,
 };
+
+const fallbackScenarios = [
+  {
+    id: "rush_hour_cascade",
+    label: "Rush Hour Cascade",
+    title: "Rush Hour Cascade",
+    description:
+      "A bus crash and warehouse fire are active when a hazmat leak stretches limited responders.",
+    objective: "Keep casualties low and prevent hospital overflow.",
+    budget: 18,
+    horizon: 10,
+    zones: ["North", "East", "South", "West", "Central"],
+    snapshots: [
+      {
+        turn: 0,
+        clock_minutes: 0,
+        reward_total: 0,
+        step_reward: 0,
+        verdict: "good",
+        summary: "2 active incidents, 0 resolved, 4 units ready, hospital overflow=0.",
+        action_headline: "Initial state",
+        action_notes: "Open the session and inspect the first incident priorities.",
+        reward_signals: [
+          { label: "Resolution", percent: 12, value: "+0.0" },
+          { label: "Stabilization", percent: 16, value: "+0.0" },
+          { label: "Foresight", percent: 22, value: "+0.5" },
+          { label: "Fairness", percent: 82, value: "-0.4" },
+          { label: "Capacity", percent: 88, value: "-0.2" },
+        ],
+        grade: { outcome: 74, timeliness: 70, fairness: 79, efficiency: 78, resilience: 75 },
+        metrics: { resolved: 0, failed: 0, lives_lost: 0.8, lives_stabilized: 0, hospital_overflow: 0 },
+        incidents: [
+          { id: "INC-1", title: "Medical", zone: "Central", severity: "4.4", status: "active", tone: "critical", meta: "Age 0 turns, window 3, resources 0" },
+          { id: "INC-2", title: "Fire", zone: "West", severity: "3.8", status: "active", tone: "warning", meta: "Age 0 turns, window 4, resources 0" },
+        ],
+        resources: [
+          { id: "AMB-1", type: "Ambulance", status: "available", zone: "North", meta: "Ambulance in North" },
+          { id: "FIRE-1", type: "Fire Engine", status: "available", zone: "Central", meta: "Fire Engine in Central" },
+          { id: "POL-1", type: "Police Unit", status: "available", zone: "Central", meta: "Police Unit in Central" },
+          { id: "HOSP-CENTRAL", type: "Hospital", status: "stable", zone: "Central", meta: "0/24 beds in use (0% utilized)" },
+        ],
+        events: [
+          { title: "Mission update", body: "Rush Hour Cascade initialized." },
+          { title: "Ops update", body: "Use the preview controls or start the backend for live simulation." },
+        ],
+      },
+      {
+        turn: 1,
+        clock_minutes: 5,
+        reward_total: 18.7,
+        step_reward: 18.7,
+        verdict: "excellent",
+        summary: "3 active incidents, 1 resolved, 3 units ready, hospital overflow=0.",
+        action_headline: "Fairness-Aware Baseline: Dispatch",
+        action_notes: "The preview shows a staged response and surge protection before the cascade expands.",
+        reward_signals: [
+          { label: "Resolution", percent: 54, value: "+12.4" },
+          { label: "Stabilization", percent: 48, value: "+7.1" },
+          { label: "Foresight", percent: 44, value: "+6.3" },
+          { label: "Fairness", percent: 90, value: "-0.1" },
+          { label: "Capacity", percent: 92, value: "-0.1" },
+        ],
+        grade: { outcome: 88, timeliness: 83, fairness: 90, efficiency: 80, resilience: 87 },
+        metrics: { resolved: 1, failed: 0, lives_lost: 1.4, lives_stabilized: 18.2, hospital_overflow: 0 },
+        incidents: [
+          { id: "INC-1", title: "Medical", zone: "Central", severity: "4.4", status: "resolved", tone: "stable", meta: "Age 1 turns, window 3, resources 0" },
+          { id: "INC-2", title: "Fire", zone: "West", severity: "3.8", status: "active", tone: "warning", meta: "Age 1 turns, window 4, resources 1" },
+          { id: "INC-3", title: "Hazmat", zone: "East", severity: "4.6", status: "active", tone: "critical", meta: "Age 0 turns, window 3, resources 2" },
+        ],
+        resources: [
+          { id: "AMB-2", type: "Ambulance", status: "on_scene", zone: "Central", meta: "Ambulance in Central" },
+          { id: "FIRE-1", type: "Fire Engine", status: "on_scene", zone: "East", meta: "Fire Engine in East" },
+          { id: "DRN-1", type: "Drone", status: "on_scene", zone: "East", meta: "Drone in East" },
+          { id: "HOSP-CENTRAL", type: "Hospital", status: "stable", zone: "Central", meta: "6/24 beds in use (25% utilized)" },
+        ],
+        events: [
+          { title: "Cascade event", body: "New incident INC-3 detected in East." },
+          { title: "Incident resolved", body: "INC-1 resolved with patients routed to care." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "festival_blackout",
+    label: "Festival Blackout",
+    title: "Festival Blackout",
+    description:
+      "A crowd surge, transformer fire, and district blackout compete for attention during a city event.",
+    objective: "Protect the crowd and maintain equitable response coverage.",
+    budget: 20,
+    horizon: 11,
+    zones: ["Arena", "OldTown", "Riverfront", "South", "Central"],
+    snapshots: [
+      {
+        turn: 0,
+        clock_minutes: 0,
+        reward_total: 0,
+        step_reward: 0,
+        verdict: "fair",
+        summary: "2 active incidents, 0 resolved, 5 units ready, hospital overflow=0.",
+        action_headline: "Initial state",
+        action_notes: "Arena pressure is visible, but the blackout risk will matter for fairness.",
+        reward_signals: [
+          { label: "Resolution", percent: 10, value: "+0.0" },
+          { label: "Stabilization", percent: 14, value: "+0.0" },
+          { label: "Foresight", percent: 20, value: "+0.3" },
+          { label: "Fairness", percent: 74, value: "-1.0" },
+          { label: "Capacity", percent: 88, value: "-0.2" },
+        ],
+        grade: { outcome: 69, timeliness: 72, fairness: 64, efficiency: 79, resilience: 71 },
+        metrics: { resolved: 0, failed: 0, lives_lost: 1.2, lives_stabilized: 0, hospital_overflow: 0 },
+        incidents: [
+          { id: "FEST-1", title: "Crowd Control", zone: "Arena", severity: "4.7", status: "active", tone: "critical", meta: "Age 0 turns, window 2, resources 0" },
+          { id: "FEST-2", title: "Fire", zone: "Riverfront", severity: "3.9", status: "active", tone: "warning", meta: "Age 0 turns, window 3, resources 0" },
+        ],
+        resources: [
+          { id: "POL-1", type: "Police Unit", status: "available", zone: "Arena", meta: "Police Unit in Arena" },
+          { id: "AMB-3", type: "Ambulance", status: "available", zone: "Arena", meta: "Ambulance in Arena" },
+          { id: "DRN-1", type: "Drone", status: "available", zone: "Central", meta: "Drone in Central" },
+          { id: "HOSP-ARENA", type: "Hospital", status: "stable", zone: "Arena", meta: "0/18 beds in use (0% utilized)" },
+        ],
+        events: [
+          { title: "Mission update", body: "Festival Blackout initialized." },
+          { title: "Ops update", body: "Arena visibility is high, but blackout spillover is not yet visible." },
+        ],
+      },
+      {
+        turn: 1,
+        clock_minutes: 5,
+        reward_total: 15.4,
+        step_reward: 15.4,
+        verdict: "good",
+        summary: "3 active incidents, 0 resolved, 4 units ready, hospital overflow=0.",
+        action_headline: "Fairness-Aware Baseline: Stage",
+        action_notes: "The preview keeps coverage on the quieter south-side failure instead of chasing only the visible crowd event.",
+        reward_signals: [
+          { label: "Resolution", percent: 26, value: "+4.8" },
+          { label: "Stabilization", percent: 34, value: "+5.0" },
+          { label: "Foresight", percent: 40, value: "+6.2" },
+          { label: "Fairness", percent: 88, value: "-0.2" },
+          { label: "Capacity", percent: 90, value: "-0.1" },
+        ],
+        grade: { outcome: 82, timeliness: 79, fairness: 86, efficiency: 77, resilience: 83 },
+        metrics: { resolved: 0, failed: 0, lives_lost: 2.0, lives_stabilized: 9.4, hospital_overflow: 0 },
+        incidents: [
+          { id: "FEST-1", title: "Crowd Control", zone: "Arena", severity: "4.7", status: "active", tone: "warning", meta: "Age 1 turns, window 2, resources 2" },
+          { id: "FEST-2", title: "Fire", zone: "Riverfront", severity: "3.9", status: "active", tone: "warning", meta: "Age 1 turns, window 3, resources 1" },
+          { id: "FEST-3", title: "Grid Failure", zone: "South", severity: "3.8", status: "active", tone: "critical", meta: "Age 0 turns, window 2, resources 1" },
+        ],
+        resources: [
+          { id: "POL-1", type: "Police Unit", status: "on_scene", zone: "Arena", meta: "Police Unit in Arena" },
+          { id: "DRN-1", type: "Drone", status: "on_scene", zone: "South", meta: "Drone in South" },
+          { id: "AMB-2", type: "Ambulance", status: "available", zone: "South", meta: "Ambulance in South" },
+          { id: "HOSP-SOUTH", type: "Hospital", status: "stable", zone: "South", meta: "2/14 beds in use (14% utilized)" },
+        ],
+        events: [
+          { title: "Cascade event", body: "FEST-3 detected in South." },
+          { title: "Ops update", body: "Coverage is split across crowd control, fire, and blackout response." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "industrial_storm",
+    label: "Industrial Storm",
+    title: "Industrial Storm",
+    description:
+      "A severe storm compounds an industrial hazard, roadway blockages, and scattered medical calls.",
+    objective: "Contain the root hazard while reserving capacity for secondary incidents.",
+    budget: 19,
+    horizon: 12,
+    zones: ["Port", "North", "South", "Industrial", "Central"],
+    snapshots: [
+      {
+        turn: 0,
+        clock_minutes: 0,
+        reward_total: 0,
+        step_reward: 0,
+        verdict: "good",
+        summary: "1 active incident, 0 resolved, 6 units ready, hospital overflow=0.",
+        action_headline: "Initial state",
+        action_notes: "The root industrial hazard should be treated before downstream effects spread.",
+        reward_signals: [
+          { label: "Resolution", percent: 10, value: "+0.0" },
+          { label: "Stabilization", percent: 18, value: "+0.0" },
+          { label: "Foresight", percent: 28, value: "+1.2" },
+          { label: "Fairness", percent: 86, value: "-0.3" },
+          { label: "Capacity", percent: 92, value: "-0.1" },
+        ],
+        grade: { outcome: 76, timeliness: 71, fairness: 81, efficiency: 77, resilience: 84 },
+        metrics: { resolved: 0, failed: 0, lives_lost: 0.6, lives_stabilized: 0, hospital_overflow: 0 },
+        incidents: [
+          { id: "STORM-1", title: "Hazmat", zone: "Industrial", severity: "4.8", status: "active", tone: "critical", meta: "Age 0 turns, window 3, resources 0" },
+        ],
+        resources: [
+          { id: "FIRE-1", type: "Fire Engine", status: "available", zone: "Industrial", meta: "Fire Engine in Industrial" },
+          { id: "DRN-1", type: "Drone", status: "available", zone: "Port", meta: "Drone in Port" },
+          { id: "AMB-1", type: "Ambulance", status: "available", zone: "Central", meta: "Ambulance in Central" },
+          { id: "HOSP-CENTRAL", type: "Hospital", status: "stable", zone: "Central", meta: "0/20 beds in use (0% utilized)" },
+        ],
+        events: [
+          { title: "Mission update", body: "Industrial Storm initialized." },
+          { title: "Ops update", body: "A single root hazard is active before secondary storm incidents appear." },
+        ],
+      },
+      {
+        turn: 1,
+        clock_minutes: 5,
+        reward_total: 16.2,
+        step_reward: 16.2,
+        verdict: "excellent",
+        summary: "2 active incidents, 0 resolved, 4 units ready, hospital overflow=0.",
+        action_headline: "Severity-First Baseline: Dispatch",
+        action_notes: "The preview shows early hazard containment while a second incident enters from the south.",
+        reward_signals: [
+          { label: "Resolution", percent: 30, value: "+5.6" },
+          { label: "Stabilization", percent: 42, value: "+6.8" },
+          { label: "Foresight", percent: 38, value: "+4.4" },
+          { label: "Fairness", percent: 90, value: "-0.2" },
+          { label: "Capacity", percent: 94, value: "-0.1" },
+        ],
+        grade: { outcome: 85, timeliness: 80, fairness: 87, efficiency: 79, resilience: 89 },
+        metrics: { resolved: 0, failed: 0, lives_lost: 1.5, lives_stabilized: 6.4, hospital_overflow: 0 },
+        incidents: [
+          { id: "STORM-1", title: "Hazmat", zone: "Industrial", severity: "4.8", status: "active", tone: "warning", meta: "Age 1 turns, window 3, resources 2" },
+          { id: "STORM-2", title: "Medical", zone: "South", severity: "3.7", status: "active", tone: "critical", meta: "Age 0 turns, window 2, resources 1" },
+        ],
+        resources: [
+          { id: "FIRE-1", type: "Fire Engine", status: "on_scene", zone: "Industrial", meta: "Fire Engine in Industrial" },
+          { id: "DRN-1", type: "Drone", status: "on_scene", zone: "Industrial", meta: "Drone in Industrial" },
+          { id: "POL-2", type: "Police Unit", status: "on_scene", zone: "South", meta: "Police Unit in South" },
+          { id: "HOSP-SOUTH", type: "Hospital", status: "stable", zone: "South", meta: "3/15 beds in use (20% utilized)" },
+        ],
+        events: [
+          { title: "Cascade event", body: "STORM-2 detected in South." },
+          { title: "Ops update", body: "The preview illustrates root-hazard containment with reserve capacity." },
+        ],
+      },
+    ],
+  },
+];
 
 const elements = {
   tabs: document.querySelector("#scenario-tabs"),
@@ -66,6 +308,7 @@ async function init() {
   try {
     const manifest = await api("/api/manifest");
     state.manifest = manifest;
+    state.offlineMode = false;
     hydrateControls(manifest);
 
     const defaultIndex = manifest.scenarios.findIndex(
@@ -78,7 +321,7 @@ async function init() {
     renderScenarioTabs();
     await resetSession();
   } catch (error) {
-    renderErrorState(error.message);
+    activateOfflineMode(error.message);
   }
 }
 
@@ -140,6 +383,10 @@ async function resetSession() {
   if (!state.manifest) {
     return;
   }
+  if (state.offlineMode) {
+    resetOfflineSession();
+    return;
+  }
 
   setBusy(true);
   const scenario = state.manifest.scenarios[state.scenarioIndex];
@@ -168,6 +415,10 @@ async function resetSession() {
 }
 
 async function runLiveStep() {
+  if (state.offlineMode) {
+    runOfflineStep();
+    return;
+  }
   if (!state.sessionId || state.busy) {
     return;
   }
@@ -209,6 +460,17 @@ async function runLiveStep() {
 }
 
 async function requestHFAdvice() {
+  if (state.offlineMode) {
+    state.hfAdvisor = {
+      configured: false,
+      error: true,
+      model: "offline preview",
+      provider: "local",
+      content: "Hugging Face advisor is unavailable in offline preview mode.",
+    };
+    renderHFPanel();
+    return;
+  }
   if (!state.sessionId || state.busy) {
     return;
   }
@@ -315,11 +577,13 @@ function render() {
 }
 
 function renderSessionBanner(snapshot, isLatest) {
-  const mode = snapshot.done
-    ? "Complete"
-    : isLatest
-      ? "Live session"
-      : "Snapshot";
+  const mode = state.offlineMode
+    ? "Offline preview"
+    : snapshot.done
+      ? "Complete"
+      : isLatest
+        ? "Live session"
+        : "Snapshot";
   const detail = [
     `Session ${snapshot.session_id.slice(0, 8)}`,
     `Policy ${labelize(snapshot.policy)}`,
@@ -447,7 +711,7 @@ function renderEvents(events) {
 function renderHFPanel() {
   const hf = state.manifest?.hf;
   const advisor = state.hfAdvisor;
-  const configured = Boolean(hf?.configured);
+  const configured = Boolean(hf?.configured) && !state.offlineMode;
   const advisorError = advisor?.error ? describeMessage(advisor.content, "hf") : null;
 
   elements.hfStatusPill.textContent = advisor?.error
@@ -460,7 +724,9 @@ function renderHFPanel() {
   elements.hfModelPill.textContent = hf?.model || "model unavailable";
   elements.hfTitle.textContent = configured
     ? "Hugging Face advisor available"
-    : "Hugging Face token required";
+    : state.offlineMode
+      ? "Hugging Face advisor unavailable"
+      : "Hugging Face token required";
   elements.hfDescription.textContent = advisor?.error
     ? advisorError.detail
     : hf?.message ||
@@ -519,6 +785,48 @@ function renderErrorState(message) {
   `;
   showStatusNotice(error.title, error.action, error.meta);
   renderHFPanel();
+}
+
+function activateOfflineMode(message) {
+  state.offlineMode = true;
+  state.manifest = buildFallbackManifest();
+  state.scenarioIndex = 0;
+  state.hfAdvisor = null;
+  hydrateControls(state.manifest);
+  elements.difficultySelect.value = state.manifest.default_difficulty;
+  elements.policySelect.value = state.manifest.policies[0]?.id ?? "fairness_aware";
+  renderScenarioTabs();
+  resetOfflineSession();
+  const error = describeMessage(message, "backend");
+  showStatusNotice(
+    "Offline preview",
+    "Live backend is not available, so the dashboard is showing built-in sample data.",
+    error.detail,
+  );
+}
+
+function resetOfflineSession() {
+  const scenario = fallbackScenarios[state.scenarioIndex];
+  const policy = elements.policySelect.value || "fairness_aware";
+  const difficulty = elements.difficultySelect.value || "advanced";
+  state.sessionId = `offline-${scenario.id}`;
+  state.snapshots = scenario.snapshots.map((snapshot, index) =>
+    buildOfflineSnapshot(scenario, snapshot, index, difficulty, policy),
+  );
+  state.historyIndex = 0;
+  state.hfAdvisor = null;
+  render();
+}
+
+function runOfflineStep() {
+  if (!state.snapshots.length) {
+    return;
+  }
+  state.historyIndex = Math.min(state.historyIndex + 1, state.snapshots.length - 1);
+  if (state.historyIndex >= state.snapshots.length - 1) {
+    stopAutoplay();
+  }
+  render();
 }
 
 function setBusy(value) {
@@ -594,6 +902,67 @@ function buildPrioritySignal(snapshot) {
     return "No active incidents. City stabilized.";
   }
   return `${active.id} is the current priority in ${active.zone}.`;
+}
+
+function buildFallbackManifest() {
+  return {
+    name: "crisis_commander_env",
+    default_scenario: fallbackScenarios[0].id,
+    default_difficulty: "advanced",
+    difficulties: ["easy", "standard", "advanced", "expert"],
+    policies: [
+      { id: "fairness_aware", label: "Fairness-Aware Baseline" },
+      { id: "severity_first", label: "Severity-First Baseline" },
+    ],
+    scenarios: fallbackScenarios.map((scenario) => ({
+      id: scenario.id,
+      label: scenario.label,
+      title: scenario.title,
+      description: scenario.description,
+      objective: scenario.objective,
+      budget: scenario.budget,
+      horizon: scenario.horizon,
+      zones: scenario.zones,
+    })),
+    hf: {
+      configured: false,
+      model: "offline preview",
+      provider: "local",
+      message: "The Hugging Face advisor is available only when the live backend is running.",
+    },
+  };
+}
+
+function buildOfflineSnapshot(scenario, snapshot, index, difficulty, policy) {
+  return {
+    session_id: `offline-${scenario.id}`,
+    scenario_id: scenario.id,
+    scenario_title: scenario.title,
+    scenario_description: scenario.description,
+    scenario_objective: scenario.objective,
+    difficulty,
+    seed: 7,
+    policy,
+    policy_label: labelize(policy),
+    turn: snapshot.turn,
+    max_turns: scenario.horizon,
+    clock_minutes: snapshot.clock_minutes,
+    budget_remaining: scenario.budget,
+    summary: snapshot.summary,
+    done: index === scenario.snapshots.length - 1,
+    step_reward: snapshot.step_reward,
+    reward_total: snapshot.reward_total,
+    reward_signals: snapshot.reward_signals,
+    verdict: snapshot.verdict,
+    grade: snapshot.grade,
+    metrics: snapshot.metrics,
+    action_headline: snapshot.action_headline,
+    action_notes: snapshot.action_notes,
+    incidents: snapshot.incidents,
+    resources: snapshot.resources,
+    events: snapshot.events,
+    zones: scenario.zones,
+  };
 }
 
 function labelize(value) {
