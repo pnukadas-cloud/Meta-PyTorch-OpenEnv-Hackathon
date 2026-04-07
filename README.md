@@ -1,3 +1,13 @@
+---
+title: Crisis Commander
+emoji: siren
+colorFrom: red
+colorTo: blue
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # Crisis Commander
 
 An OpenEnv-style reinforcement learning environment where an agent acts as a citywide incident commander during cascading public emergencies.
