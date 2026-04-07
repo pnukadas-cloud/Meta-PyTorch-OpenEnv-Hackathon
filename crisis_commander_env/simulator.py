@@ -79,7 +79,6 @@ class CrisisCommanderEnv(Environment[CrisisAction, CrisisObservation]):
         opening = [
             f"Mission '{scenario.title}' initialized.",
             scenario.description,
-            scenario.submission_story,
         ]
         self.state.recent_events = opening
         observation = self._build_observation(opening)

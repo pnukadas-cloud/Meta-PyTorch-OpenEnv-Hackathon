@@ -150,9 +150,6 @@ SCENARIOS: dict[str, ScenarioConfig] = {
                 ),
             ),
         ],
-        submission_story=(
-            "This scenario showcases cascading uncertainty, fairness pressure, and coordination under resource scarcity."
-        ),
     ),
     "festival_blackout": ScenarioConfig(
         id="festival_blackout",
@@ -235,9 +232,6 @@ SCENARIOS: dict[str, ScenarioConfig] = {
                 ),
             ),
         ],
-        submission_story=(
-            "This scenario stresses fairness-aware allocation by pitting headline incidents against vulnerable districts."
-        ),
     ),
     "industrial_storm": ScenarioConfig(
         id="industrial_storm",
@@ -323,9 +317,6 @@ SCENARIOS: dict[str, ScenarioConfig] = {
                 ),
             ),
         ],
-        submission_story=(
-            "This scenario rewards agents that think in contingencies instead of greedily chasing the first emergency."
-        ),
     ),
 }
 
@@ -338,4 +329,3 @@ def get_scenario(scenario_id: str) -> ScenarioConfig:
     if scenario_id not in SCENARIOS:
         raise KeyError(f"Unknown scenario '{scenario_id}'. Available: {', '.join(sorted(SCENARIOS))}")
     return deepcopy(SCENARIOS[scenario_id])
-

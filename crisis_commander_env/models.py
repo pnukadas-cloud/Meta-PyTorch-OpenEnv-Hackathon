@@ -178,7 +178,6 @@ class ScenarioConfig:
     hospitals: list[Hospital]
     incidents: list[Incident]
     scheduled_incidents: list[ScheduledIncident]
-    submission_story: str
 
 
 @dataclass
@@ -265,4 +264,3 @@ class CrisisState(State):
     action_history: list[str] = field(default_factory=list)
     recent_events: list[str] = field(default_factory=list)
     done: bool = False
-

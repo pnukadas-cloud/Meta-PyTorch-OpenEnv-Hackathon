@@ -1,4 +1,4 @@
-"""Session and serialization helpers for the live command-center UI."""
+"""Session and serialization helpers for the command-center UI."""
 
 from __future__ import annotations
 
@@ -45,7 +45,6 @@ def build_manifest() -> dict:
                 "title": scenario.title,
                 "description": scenario.description,
                 "objective": scenario.objective,
-                "submission_story": scenario.submission_story,
                 "budget": scenario.budget,
                 "horizon": scenario.horizon,
                 "zones": list(scenario.zones),
@@ -161,7 +160,6 @@ def build_snapshot(
         "scenario_title": state.scenario.title,
         "scenario_description": state.scenario.description,
         "scenario_objective": state.scenario.objective,
-        "submission_story": state.scenario.submission_story,
         "difficulty": record.difficulty,
         "seed": record.seed,
         "policy": record.policy,

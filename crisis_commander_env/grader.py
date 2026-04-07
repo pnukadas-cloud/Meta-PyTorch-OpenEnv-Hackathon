@@ -1,4 +1,4 @@
-"""Episode grading for hackathon-style evaluation."""
+"""Episode grading helpers."""
 
 from __future__ import annotations
 
@@ -80,10 +80,9 @@ def grade_episode(state: CrisisState) -> dict[str, Any]:
 
 def _verdict(score: float) -> str:
     if score >= 85:
-        return "final-round caliber"
+        return "excellent"
     if score >= 72:
-        return "strong shortlist"
+        return "good"
     if score >= 60:
-        return "promising but leaky"
-    return "needs a better dispatch policy"
-
+        return "fair"
+    return "poor"

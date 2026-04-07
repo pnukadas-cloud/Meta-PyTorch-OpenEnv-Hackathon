@@ -14,7 +14,7 @@ class HFStrategistTests(unittest.TestCase):
             "max_turns": 10,
             "clock_minutes": 10,
             "budget_remaining": 14,
-            "verdict": "strong shortlist",
+            "verdict": "good",
             "action_headline": "Fairness-Aware Baseline: Dispatch",
             "summary": "3 active incidents, 1 resolved.",
             "incidents": [

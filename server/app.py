@@ -20,12 +20,14 @@ except ImportError:
 
 try:
     from fastapi import FastAPI, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
     from pydantic import BaseModel
 except ImportError:
     FastAPI = None
     HTTPException = None
+    CORSMiddleware = None
     FileResponse = None
     StaticFiles = None
     BaseModel = object
@@ -56,6 +58,13 @@ def _build_app():
         return None
 
     app = FastAPI(title="Crisis Commander")
+    if CORSMiddleware is not None:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     if create_app is not None:
         openenv_app = create_app(

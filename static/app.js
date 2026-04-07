@@ -286,12 +286,7 @@ function render() {
 
   elements.title.textContent = snapshot.scenario_title || scenario.title;
   elements.description.textContent = snapshot.scenario_description || scenario.description;
-  elements.objectives.innerHTML = [
-    snapshot.scenario_objective || scenario.objective,
-    snapshot.submission_story || scenario.submission_story,
-  ]
-    .map((item) => `<li>${item}</li>`)
-    .join("");
+  elements.objectives.innerHTML = `<li>${snapshot.scenario_objective || scenario.objective}</li>`;
   elements.budget.textContent = `${snapshot.budget_remaining} command points left`;
   elements.horizon.textContent = `${snapshot.max_turns} turns`;
   elements.zones.textContent = snapshot.zones.join(", ");
@@ -317,10 +312,10 @@ function render() {
 
 function renderSessionBanner(snapshot, isLatest) {
   const mode = snapshot.done
-    ? "Mission complete"
+    ? "Complete"
     : isLatest
-      ? "Connected to live Python session"
-      : "Viewing earlier snapshot";
+      ? "Live session"
+      : "Snapshot";
   const detail = [
     `Session ${snapshot.session_id.slice(0, 8)}`,
     `Policy ${labelize(snapshot.policy)}`,
@@ -458,12 +453,12 @@ function renderHFPanel() {
         : "token needed";
   elements.hfModelPill.textContent = hf?.model || "model unavailable";
   elements.hfTitle.textContent = configured
-    ? "Hugging Face command advisor is available"
-    : "Connect a Hugging Face token to activate AI advice";
+    ? "Hugging Face advisor available"
+    : "Hugging Face token required";
   elements.hfDescription.textContent = advisor?.error
     ? advisor.content
     : hf?.message ||
-      "The app can call a real Hugging Face instruct model to interpret the live simulator state and suggest a next move.";
+      "The app can request a model-generated recommendation for the current simulator state.";
 
   if (advisor?.content && !advisor.error) {
     elements.hfOutput.innerHTML = `
@@ -487,11 +482,11 @@ function renderHFPanel() {
 
   elements.hfOutput.innerHTML = `
     <article class="strategist-card">
-      <h4>How to use it</h4>
+      <h4>Status</h4>
       <p>${escapeHtml(
         configured
-          ? "Click 'Ask HF Strategist' to send the current mission snapshot to the model and receive an actionable recommendation."
-          : "Set HF_TOKEN or run `hf auth login` in the same environment as the server, then restart the app and click 'Ask HF Strategist'.",
+          ? "Click 'Ask HF Strategist' to request a recommendation for the current mission snapshot."
+          : "Set HF_TOKEN or run `hf auth login` in the same environment as the server, then restart the app.",
       )}</p>
     </article>
   `;
@@ -499,7 +494,7 @@ function renderHFPanel() {
 
 function renderLoadingState() {
   elements.sessionState.textContent = "Connecting to backend...";
-  elements.sessionDetail.textContent = `Trying ${state.apiBase}`;
+  elements.sessionDetail.textContent = `Backend: ${state.apiBase}`;
   renderHFPanel();
 }
 
@@ -508,7 +503,7 @@ function renderErrorState(message) {
   elements.sessionDetail.textContent = message;
   elements.actionHeadline.textContent = "Run python -m server.app";
   elements.actionNotes.textContent =
-    `Start the server, then open http://127.0.0.1:8000/ or keep this page open and make sure the backend is reachable at ${state.apiBase}.`;
+    `Start the server and make sure the backend is reachable at ${state.apiBase}.`;
   elements.eventList.innerHTML = `
     <article class="event-card">
       <strong>Connection error</strong>
@@ -548,6 +543,14 @@ async function api(path, options = {}) {
   }
 
   if (!response.ok) {
+    if (
+      response.status === 404 &&
+      state.apiBase === window.location.origin &&
+      window.location.origin !== "http://127.0.0.1:8000"
+    ) {
+      state.apiBase = "http://127.0.0.1:8000";
+      return api(path, options);
+    }
     const detail =
       payload?.detail || `Request failed with status ${response.status} from ${buildApiUrl(path)}`;
     throw new Error(detail);

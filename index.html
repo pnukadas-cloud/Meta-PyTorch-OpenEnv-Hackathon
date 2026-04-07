@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Crisis Commander | OpenEnv Hackathon Demo</title>
+    <title>Crisis Commander</title>
     <meta
       name="description"
-      content="A polished demo page for Crisis Commander, an OpenEnv-style urban emergency response environment."
+      content="Interactive dashboard for the Crisis Commander simulator."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,8 +14,8 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./static/styles.css" />
-    <script defer src="./static/app.js"></script>
+    <link rel="stylesheet" href="./static/styles.css?v=2" />
+    <script defer src="./static/app.js?v=2"></script>
   </head>
   <body>
     <div class="page-shell">
@@ -25,48 +25,45 @@
             <span class="brand-pulse"></span>
             <span class="brand-copy">
               <strong>Crisis Commander</strong>
-              <small>OpenEnv Hackathon Demo</small>
+              <small>Emergency Response Simulator</small>
             </span>
           </div>
           <div class="topbar-links">
-            <a href="#command-center">Command Center</a>
-            <a href="#system">System Design</a>
-            <a href="#submission">Submission Edge</a>
+            <a href="./README.md">README</a>
           </div>
         </nav>
 
         <div class="hero-grid">
           <section class="hero-copy panel">
-            <p class="eyebrow">Meta x PyTorch OpenEnv Hackathon</p>
-            <h1>Train agents to run a city during cascading emergencies.</h1>
+            <p class="eyebrow">Live Dashboard</p>
+            <h1>Run scenarios and inspect the simulator state.</h1>
             <p class="lead">
-              Crisis Commander is a multi-objective RL environment where an agent balances casualty
-              reduction, response speed, hospital capacity, fairness, and operational cost under
-              dynamic urban incidents.
+              Start a session, step a policy, and monitor incidents, resources, hospitals, and score
+              changes turn by turn.
             </p>
             <div class="hero-actions">
-              <a class="primary-button" href="#command-center">Launch Demo View</a>
-              <a class="ghost-button" href="./README.md">Read Submission README</a>
+              <a class="primary-button" href="#command-center">Open Dashboard</a>
+              <a class="ghost-button" href="./README.md">Open README</a>
             </div>
             <div class="metric-strip">
               <article>
                 <span class="metric-value">3</span>
-                <span class="metric-label">scenario arcs</span>
+                <span class="metric-label">scenarios</span>
               </article>
               <article>
                 <span class="metric-value">6</span>
-                <span class="metric-label">action types</span>
+                <span class="metric-label">actions</span>
               </article>
               <article>
                 <span class="metric-value">5</span>
-                <span class="metric-label">judge dimensions</span>
+                <span class="metric-label">score dimensions</span>
               </article>
             </div>
           </section>
 
           <section class="hero-visual panel">
             <div class="visual-header">
-              <span>Live mission storyboard</span>
+              <span>Current scenario</span>
               <strong id="visual-scenario-title">Rush Hour Cascade</strong>
             </div>
             <div class="city-grid">
@@ -81,12 +78,12 @@
             </div>
             <div class="visual-feed">
               <div>
-                <span class="feed-label">Priority signal</span>
-                <strong id="visual-priority-signal">Hazmat plume scheduled at turn 2</strong>
+                <span class="feed-label">Priority</span>
+                <strong id="visual-priority-signal">No data yet</strong>
               </div>
               <div>
-                <span class="feed-label">Winning move</span>
-                <strong id="visual-winning-move">Pre-stage drone + police before the spillover lands</strong>
+                <span class="feed-label">Action</span>
+                <strong id="visual-winning-move">No action yet</strong>
               </div>
             </div>
           </section>
@@ -96,25 +93,20 @@
       <main>
         <section class="command-center" id="command-center">
           <div class="section-heading">
-            <p class="eyebrow">Interactive Preview</p>
+            <p class="eyebrow">Session</p>
             <h2>Command Center</h2>
-            <p>
-              Switch scenarios, scrub turns, and see how the environment communicates risk, action,
-              and scoring to a learning agent or hackathon judge.
-            </p>
+            <p>Use the controls below to create a session and step through the environment.</p>
           </div>
 
           <div class="command-layout">
             <aside class="scenario-column panel">
               <div class="panel-topline">
-                <span>Live backend session</span>
+                <span>Session</span>
                 <span id="difficulty-pill">connecting</span>
               </div>
               <div class="live-status">
-                <strong id="session-state">Booting command center...</strong>
-                <p id="session-detail">
-                  The browser will connect to the Python backend and create a real simulator session.
-                </p>
+                <strong id="session-state">Waiting for backend</strong>
+                <p id="session-detail">Start the backend to create a simulator session.</p>
               </div>
               <div class="scenario-tabs" id="scenario-tabs"></div>
               <div class="control-stack">
@@ -131,8 +123,8 @@
                   <input id="seed-input" type="number" value="7" min="1" max="99999" />
                 </label>
                 <div class="action-row">
-                  <button class="control-button" id="reset-session" type="button">Reset Mission</button>
-                  <button class="control-button accent" id="step-session" type="button">Run Next Step</button>
+                  <button class="control-button" id="reset-session" type="button">Reset</button>
+                  <button class="control-button accent" id="step-session" type="button">Step</button>
                 </div>
               </div>
               <div class="mission-brief">
@@ -146,11 +138,11 @@
                   <strong id="scenario-budget"></strong>
                 </article>
                 <article>
-                  <span>Mission Horizon</span>
+                  <span>Horizon</span>
                   <strong id="scenario-horizon"></strong>
                 </article>
                 <article>
-                  <span>Priority Zones</span>
+                  <span>Zones</span>
                   <strong id="scenario-zones"></strong>
                 </article>
               </div>
@@ -160,7 +152,7 @@
               <div class="status-grid">
                 <article class="score-panel panel">
                   <div class="panel-topline">
-                    <span>OpenEnv reward</span>
+                    <span>Reward</span>
                     <span id="turn-readout"></span>
                   </div>
                   <div class="score-value" id="reward-total"></div>
@@ -169,7 +161,7 @@
 
                 <article class="grade-panel panel">
                   <div class="panel-topline">
-                    <span>Judge verdict</span>
+                    <span>Score summary</span>
                     <span id="verdict-pill"></span>
                   </div>
                   <div class="grade-grid" id="grade-grid"></div>
@@ -178,7 +170,7 @@
 
               <article class="panel strategist-panel">
                 <div class="panel-topline">
-                  <span>HF Strategist</span>
+                  <span>HF advisor</span>
                   <span id="hf-status-pill">waiting</span>
                 </div>
                 <div class="strategist-actions">
@@ -186,28 +178,26 @@
                   <span id="hf-model-pill">model unavailable</span>
                 </div>
                 <div class="strategist-copy">
-                  <strong id="hf-title">Hugging Face command advisor</strong>
-                  <p id="hf-description">
-                    The app can call a real Hugging Face instruct model to interpret the live simulator state and suggest a next move.
-                  </p>
+                  <strong id="hf-title">Hugging Face advisor</strong>
+                  <p id="hf-description"></p>
                 </div>
                 <div class="strategist-output" id="hf-output"></div>
               </article>
 
               <article class="panel playback-panel">
                 <div class="panel-topline">
-                  <span>Session playback</span>
+                  <span>Playback</span>
                   <span id="autoplay-indicator">manual</span>
                 </div>
                 <div class="timeline-controls">
-                  <button class="control-button" id="prev-turn" type="button">Prev Snapshot</button>
-                  <button class="control-button accent" id="auto-play" type="button">Auto Play</button>
-                  <button class="control-button" id="next-turn" type="button">Next Snapshot</button>
+                  <button class="control-button" id="prev-turn" type="button">Prev</button>
+                  <button class="control-button accent" id="auto-play" type="button">Auto</button>
+                  <button class="control-button" id="next-turn" type="button">Next</button>
                 </div>
                 <div class="timeline-track" id="timeline-track"></div>
                 <div class="turn-callout">
                   <div>
-                    <span class="feed-label">Agent action</span>
+                    <span class="feed-label">Action</span>
                     <strong id="action-headline"></strong>
                   </div>
                   <p id="action-notes"></p>
@@ -225,7 +215,7 @@
 
                 <article class="panel">
                   <div class="panel-topline">
-                    <span>Responder network</span>
+                    <span>Resources</span>
                     <span id="resource-count"></span>
                   </div>
                   <div class="resource-list" id="resource-list"></div>
@@ -234,79 +224,12 @@
 
               <article class="panel event-panel">
                 <div class="panel-topline">
-                  <span>Mission log</span>
-                  <span id="log-mode">real-time narrative</span>
+                  <span>Events</span>
+                  <span id="log-mode">live</span>
                 </div>
                 <div class="event-list" id="event-list"></div>
               </article>
             </section>
-          </div>
-        </section>
-
-        <section class="system-section" id="system">
-          <div class="section-heading">
-            <p class="eyebrow">System Design</p>
-            <h2>Why the environment feels advanced</h2>
-          </div>
-          <div class="feature-grid">
-            <article class="feature-card panel">
-              <h3>Cascading uncertainty</h3>
-              <p>
-                Incidents appear mid-episode, which forces the policy to reserve capacity and value
-                pre-positioning instead of greedily consuming every responder on turn one.
-              </p>
-            </article>
-            <article class="feature-card panel">
-              <h3>Fairness-aware pressure</h3>
-              <p>
-                High-vulnerability districts penalize neglect, so the reward is aligned with
-                equitable public-service behavior instead of raw throughput alone.
-              </p>
-            </article>
-            <article class="feature-card panel">
-              <h3>Operational realism</h3>
-              <p>
-                Travel time, hospital overflow, mutual aid costs, and resource specialization make
-                the action space feel like command-and-control, not ticket routing.
-              </p>
-            </article>
-            <article class="feature-card panel">
-              <h3>Hackathon-ready judging</h3>
-              <p>
-                The environment outputs both step rewards and a judge-friendly summary across
-                outcome, timeliness, fairness, efficiency, and resilience.
-              </p>
-            </article>
-          </div>
-        </section>
-
-        <section class="submission-section" id="submission">
-          <div class="section-heading">
-            <p class="eyebrow">Submission Edge</p>
-            <h2>A concept judges can remember in one sentence</h2>
-          </div>
-          <div class="submission-grid">
-            <article class="panel submission-card">
-              <h3>Winning pitch</h3>
-              <p>
-                "Crisis Commander trains agents to run a citywide emergency command center under
-                cascading incidents, fairness pressure, and hospital constraints."
-              </p>
-            </article>
-            <article class="panel submission-card">
-              <h3>Why it stands out</h3>
-              <p>
-                It looks serious, research-adjacent, and societally meaningful. It is much harder to
-                confuse with a generic support or workflow environment.
-              </p>
-            </article>
-            <article class="panel submission-card">
-              <h3>What you can demo fast</h3>
-              <p>
-                One 30-second walkthrough shows the action space, dynamic incidents, reward
-                tradeoffs, and the final verdict panel without asking the viewer to imagine anything.
-              </p>
-            </article>
           </div>
         </section>
       </main>
