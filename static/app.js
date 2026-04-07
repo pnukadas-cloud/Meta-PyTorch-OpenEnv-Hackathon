@@ -43,6 +43,10 @@ const elements = {
   difficultyPill: document.querySelector("#difficulty-pill"),
   sessionState: document.querySelector("#session-state"),
   sessionDetail: document.querySelector("#session-detail"),
+  statusNotice: document.querySelector("#status-notice"),
+  statusNoteTitle: document.querySelector("#status-note-title"),
+  statusNoteBody: document.querySelector("#status-note-body"),
+  statusNoteMeta: document.querySelector("#status-note-meta"),
   logMode: document.querySelector("#log-mode"),
   visualScenarioTitle: document.querySelector("#visual-scenario-title"),
   visualPrioritySignal: document.querySelector("#visual-priority-signal"),
@@ -324,6 +328,7 @@ function renderSessionBanner(snapshot, isLatest) {
 
   elements.sessionState.textContent = mode;
   elements.sessionDetail.textContent = detail;
+  hideStatusNotice();
 }
 
 function renderHero(snapshot) {
@@ -443,6 +448,7 @@ function renderHFPanel() {
   const hf = state.manifest?.hf;
   const advisor = state.hfAdvisor;
   const configured = Boolean(hf?.configured);
+  const advisorError = advisor?.error ? describeMessage(advisor.content, "hf") : null;
 
   elements.hfStatusPill.textContent = advisor?.error
     ? "error"
@@ -456,7 +462,7 @@ function renderHFPanel() {
     ? "Hugging Face advisor available"
     : "Hugging Face token required";
   elements.hfDescription.textContent = advisor?.error
-    ? advisor.content
+    ? advisorError.detail
     : hf?.message ||
       "The app can request a model-generated recommendation for the current simulator state.";
 
@@ -473,8 +479,8 @@ function renderHFPanel() {
   if (advisor?.error) {
     elements.hfOutput.innerHTML = `
       <article class="strategist-card">
-        <h4>HF strategist unavailable</h4>
-        <p>${escapeHtml(advisor.content)}</p>
+        <h4>${escapeHtml(advisorError.title)}</h4>
+        <p>${escapeHtml(advisorError.detail)}</p>
       </article>
     `;
     return;
@@ -495,21 +501,23 @@ function renderHFPanel() {
 function renderLoadingState() {
   elements.sessionState.textContent = "Connecting to backend...";
   elements.sessionDetail.textContent = `Backend: ${state.apiBase}`;
+  showStatusNotice("Connecting", "Trying to reach the backend API.", state.apiBase);
   renderHFPanel();
 }
 
 function renderErrorState(message) {
+  const error = describeMessage(message, "backend");
   elements.sessionState.textContent = "Backend unavailable";
-  elements.sessionDetail.textContent = message;
+  elements.sessionDetail.textContent = error.detail;
   elements.actionHeadline.textContent = "Run python -m server.app";
-  elements.actionNotes.textContent =
-    `Start the server and make sure the backend is reachable at ${state.apiBase}.`;
+  elements.actionNotes.textContent = error.action;
   elements.eventList.innerHTML = `
     <article class="event-card">
-      <strong>Connection error</strong>
-      <p>${escapeHtml(message)}</p>
+      <strong>${escapeHtml(error.title)}</strong>
+      <p>${escapeHtml(error.detail)}</p>
     </article>
   `;
+  showStatusNotice(error.title, error.action, error.meta);
   renderHFPanel();
 }
 
@@ -608,6 +616,84 @@ function escapeHtml(value) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function showStatusNotice(title, body, meta = "") {
+  elements.statusNoteTitle.textContent = title;
+  elements.statusNoteBody.textContent = body;
+  elements.statusNoteMeta.textContent = meta;
+  elements.statusNoteMeta.classList.toggle("hidden", !meta);
+  elements.statusNotice.classList.remove("hidden");
+}
+
+function hideStatusNotice() {
+  elements.statusNotice.classList.add("hidden");
+}
+
+function describeMessage(message, source = "backend") {
+  const text = String(message || "").trim();
+  const lowered = text.toLowerCase();
+
+  if (!text) {
+    return {
+      title: "Request failed",
+      detail: "The operation did not complete.",
+      action: "Retry the action.",
+      meta: "",
+    };
+  }
+
+  if (lowered.includes("could not reach backend")) {
+    return {
+      title: "Backend not reachable",
+      detail: "The browser could not connect to the API server.",
+      action: "Start the server with `python -m server.app`, then refresh the page.",
+      meta: state.apiBase,
+    };
+  }
+
+  if (lowered.includes("status 404")) {
+    return {
+      title: "API route not found",
+      detail: "The page reached a server, but the required API endpoint was not available.",
+      action: "Open the app from `http://127.0.0.1:8000/` after the backend starts.",
+      meta: text,
+    };
+  }
+
+  if (lowered.includes("token") && lowered.includes("hugging face")) {
+    return {
+      title: "Hugging Face token missing",
+      detail: "The advisor cannot run because no Hugging Face token is configured.",
+      action: "Run `hf auth login` or set `HF_TOKEN`, then restart the server.",
+      meta: source === "hf" ? text : "",
+    };
+  }
+
+  if (lowered.includes("huggingface_hub is not installed")) {
+    return {
+      title: "Hugging Face dependency missing",
+      detail: "The backend is missing the `huggingface_hub` package.",
+      action: "Install dependencies again and restart the server.",
+      meta: "",
+    };
+  }
+
+  if (lowered.includes("ui assets are missing")) {
+    return {
+      title: "UI assets missing",
+      detail: "The deployment is missing the frontend files required by the app.",
+      action: "Rebuild and redeploy the project.",
+      meta: "",
+    };
+  }
+
+  return {
+    title: source === "hf" ? "Advisor request failed" : "Request failed",
+    detail: text,
+    action: "Retry the action after checking the backend.",
+    meta: "",
+  };
 }
 
 init();
