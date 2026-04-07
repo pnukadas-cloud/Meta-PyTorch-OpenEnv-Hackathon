@@ -515,8 +515,7 @@ h1 {
 .grade-grid,
 .incident-list,
 .resource-list,
-.event-list,
-.strategist-output {
+.event-list {
   display: grid;
   gap: 12px;
 }
@@ -568,64 +567,6 @@ h1 {
   gap: 10px;
   margin: 18px 0 16px;
   flex-wrap: wrap;
-}
-
-.strategist-panel {
-  padding: 26px;
-}
-
-.strategist-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 18px 0 14px;
-}
-
-#hf-status-pill,
-#hf-model-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.strategist-copy strong {
-  display: block;
-  font-family: "Sora", sans-serif;
-}
-
-.strategist-copy p {
-  margin: 10px 0 0;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.strategist-output {
-  margin-top: 16px;
-}
-
-.strategist-card {
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.strategist-card h4 {
-  margin: 0 0 8px;
-  font-family: "Sora", sans-serif;
-  font-size: 0.95rem;
-}
-
-.strategist-card p {
-  margin: 0;
-  color: #c8d4da;
-  line-height: 1.65;
-  white-space: pre-wrap;
 }
 
 .control-button {

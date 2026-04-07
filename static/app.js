@@ -6,7 +6,6 @@ const state = {
   historyIndex: 0,
   autoplayTimer: null,
   busy: false,
-  hfAdvisor: null,
   apiBase: resolveApiBase(),
   offlineMode: false,
 };
@@ -293,12 +292,6 @@ const elements = {
   visualScenarioTitle: document.querySelector("#visual-scenario-title"),
   visualPrioritySignal: document.querySelector("#visual-priority-signal"),
   visualWinningMove: document.querySelector("#visual-winning-move"),
-  askHf: document.querySelector("#ask-hf"),
-  hfStatusPill: document.querySelector("#hf-status-pill"),
-  hfModelPill: document.querySelector("#hf-model-pill"),
-  hfTitle: document.querySelector("#hf-title"),
-  hfDescription: document.querySelector("#hf-description"),
-  hfOutput: document.querySelector("#hf-output"),
 };
 
 async function init() {
@@ -336,9 +329,6 @@ function bindControls() {
   elements.stepSession.addEventListener("click", () => {
     stopAutoplay();
     runLiveStep();
-  });
-  elements.askHf.addEventListener("click", () => {
-    requestHFAdvice();
   });
 }
 
@@ -405,7 +395,6 @@ async function resetSession() {
     state.sessionId = response.session_id;
     state.snapshots = [response.snapshot];
     state.historyIndex = 0;
-    state.hfAdvisor = null;
     render();
   } catch (error) {
     renderErrorState(error.message);
@@ -459,51 +448,6 @@ async function runLiveStep() {
   }
 }
 
-async function requestHFAdvice() {
-  if (state.offlineMode) {
-    state.hfAdvisor = {
-      configured: false,
-      error: true,
-      model: "offline preview",
-      provider: "local",
-      content: "Hugging Face advisor is unavailable in offline preview mode.",
-    };
-    renderHFPanel();
-    return;
-  }
-  if (!state.sessionId || state.busy) {
-    return;
-  }
-
-  setBusy(true);
-  elements.hfStatusPill.textContent = "thinking";
-  elements.hfOutput.innerHTML = `
-    <article class="strategist-card">
-      <h4>Generating advice</h4>
-      <p>Sending the live simulator snapshot to the Hugging Face strategist model...</p>
-    </article>
-  `;
-
-  try {
-    const response = await api(`/api/sessions/${state.sessionId}/advisor`, {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
-    state.hfAdvisor = response.advisor;
-  } catch (error) {
-    state.hfAdvisor = {
-      configured: false,
-      error: true,
-      model: state.manifest?.hf?.model || "unavailable",
-      provider: state.manifest?.hf?.provider || "auto",
-      content: error.message,
-    };
-  } finally {
-    setBusy(false);
-    renderHFPanel();
-  }
-}
-
 function browseHistory(direction) {
   if (!state.snapshots.length) {
     return;
@@ -539,7 +483,6 @@ function stopAutoplay() {
 
 function render() {
   if (!state.manifest || !state.snapshots.length) {
-    renderHFPanel();
     return;
   }
 
@@ -573,7 +516,6 @@ function render() {
   renderIncidents(snapshot.incidents);
   renderResources(snapshot.resources);
   renderEvents(snapshot.events);
-  renderHFPanel();
 }
 
 function renderSessionBanner(snapshot, isLatest) {
@@ -708,67 +650,10 @@ function renderEvents(events) {
     .join("");
 }
 
-function renderHFPanel() {
-  const hf = state.manifest?.hf;
-  const advisor = state.hfAdvisor;
-  const configured = Boolean(hf?.configured) && !state.offlineMode;
-  const advisorError = advisor?.error ? describeMessage(advisor.content, "hf") : null;
-
-  elements.hfStatusPill.textContent = advisor?.error
-    ? "error"
-    : advisor
-      ? "ready"
-      : configured
-        ? "online"
-        : "token needed";
-  elements.hfModelPill.textContent = hf?.model || "model unavailable";
-  elements.hfTitle.textContent = configured
-    ? "Hugging Face advisor available"
-    : state.offlineMode
-      ? "Hugging Face advisor unavailable"
-      : "Hugging Face token required";
-  elements.hfDescription.textContent = advisor?.error
-    ? advisorError.detail
-    : hf?.message ||
-      "The app can request a model-generated recommendation for the current simulator state.";
-
-  if (advisor?.content && !advisor.error) {
-    elements.hfOutput.innerHTML = `
-      <article class="strategist-card">
-        <h4>${escapeHtml(advisor.model)} via ${escapeHtml(advisor.provider)}</h4>
-        <p>${escapeHtml(advisor.content)}</p>
-      </article>
-    `;
-    return;
-  }
-
-  if (advisor?.error) {
-    elements.hfOutput.innerHTML = `
-      <article class="strategist-card">
-        <h4>${escapeHtml(advisorError.title)}</h4>
-        <p>${escapeHtml(advisorError.detail)}</p>
-      </article>
-    `;
-    return;
-  }
-
-  elements.hfOutput.innerHTML = `
-    <article class="strategist-card">
-      <h4>Status</h4>
-      <p>${escapeHtml(
-        configured
-          ? "Click 'Ask HF Strategist' to request a recommendation for the current mission snapshot."
-          : "Set HF_TOKEN or run `hf auth login` in the same environment as the server, then restart the app.",
-      )}</p>
-    </article>
-  `;
-}
-
 function renderLoadingState() {
   elements.sessionState.textContent = "Connecting to backend...";
   elements.sessionDetail.textContent = `Backend: ${state.apiBase}`;
   showStatusNotice("Connecting", "Trying to reach the backend API.", state.apiBase);
-  renderHFPanel();
 }
 
 function renderErrorState(message) {
@@ -784,14 +669,12 @@ function renderErrorState(message) {
     </article>
   `;
   showStatusNotice(error.title, error.action, error.meta);
-  renderHFPanel();
 }
 
 function activateOfflineMode(message) {
   state.offlineMode = true;
   state.manifest = buildFallbackManifest();
   state.scenarioIndex = 0;
-  state.hfAdvisor = null;
   hydrateControls(state.manifest);
   elements.difficultySelect.value = state.manifest.default_difficulty;
   elements.policySelect.value = state.manifest.policies[0]?.id ?? "fairness_aware";
@@ -814,7 +697,6 @@ function resetOfflineSession() {
     buildOfflineSnapshot(scenario, snapshot, index, difficulty, policy),
   );
   state.historyIndex = 0;
-  state.hfAdvisor = null;
   render();
 }
 
@@ -834,7 +716,6 @@ function setBusy(value) {
   elements.resetSession.disabled = value;
   elements.stepSession.disabled = value;
   elements.autoPlay.disabled = value && !state.autoplayTimer;
-  elements.askHf.disabled = value;
 }
 
 async function api(path, options = {}) {
@@ -924,12 +805,6 @@ function buildFallbackManifest() {
       horizon: scenario.horizon,
       zones: scenario.zones,
     })),
-    hf: {
-      configured: false,
-      model: "offline preview",
-      provider: "local",
-      message: "The Hugging Face advisor is available only when the live backend is running.",
-    },
   };
 }
 
@@ -1030,24 +905,6 @@ function describeMessage(message, source = "backend") {
     };
   }
 
-  if (lowered.includes("token") && lowered.includes("hugging face")) {
-    return {
-      title: "Hugging Face token missing",
-      detail: "The advisor cannot run because no Hugging Face token is configured.",
-      action: "Run `hf auth login` or set `HF_TOKEN`, then restart the server.",
-      meta: source === "hf" ? text : "",
-    };
-  }
-
-  if (lowered.includes("huggingface_hub is not installed")) {
-    return {
-      title: "Hugging Face dependency missing",
-      detail: "The backend is missing the `huggingface_hub` package.",
-      action: "Install dependencies again and restart the server.",
-      meta: "",
-    };
-  }
-
   if (lowered.includes("ui assets are missing")) {
     return {
       title: "UI assets missing",
@@ -1058,7 +915,7 @@ function describeMessage(message, source = "backend") {
   }
 
   return {
-    title: source === "hf" ? "Advisor request failed" : "Request failed",
+    title: "Request failed",
     detail: text,
     action: "Retry the action after checking the backend.",
     meta: "",
