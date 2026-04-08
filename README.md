@@ -1,6 +1,6 @@
 ---
 title: Crisis Commander
-emoji: siren
+emoji: 🚨
 colorFrom: red
 colorTo: blue
 sdk: docker
