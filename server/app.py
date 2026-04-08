@@ -3,27 +3,23 @@
 from __future__ import annotations
 
 import os
+from dataclasses import fields, is_dataclass
+from enum import Enum
 from pathlib import Path
+from typing import Any
 
-from crisis_commander_env.models import CrisisAction, CrisisObservation
+from crisis_commander_env.models import CrisisAction, CrisisObservation, CrisisState, Difficulty
 from server.crisis_commander_environment import CrisisCommanderEnvironment
 from server.runtime import build_manifest, create_session, require_session, step_session
 
 try:
-    from openenv.core.env_server import create_app  # type: ignore
-except ImportError:
-    try:
-        from openenv.core.env_server.http_server import create_app  # type: ignore
-    except ImportError:
-        create_app = None
-
-try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import Body, FastAPI, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
     from pydantic import BaseModel
 except ImportError:
+    Body = None
     FastAPI = None
     HTTPException = None
     CORSMiddleware = None
@@ -37,6 +33,7 @@ INDEX_FILE = ROOT_DIR / "index.html"
 ADMIN_LOGIN_FILE = ROOT_DIR / "admin-login.html"
 USER_LOGIN_FILE = ROOT_DIR / "user-login.html"
 STATIC_DIR = ROOT_DIR / "static"
+OPENENV_ENVS: dict[str, CrisisCommanderEnvironment] = {}
 
 
 class CreateSessionRequest(BaseModel):
@@ -50,19 +47,52 @@ class StepSessionRequest(BaseModel):
     policy: str | None = None
 
 
+def _serialize_value(value: Any) -> Any:
+    if is_dataclass(value):
+        return {field.name: _serialize_value(getattr(value, field.name)) for field in fields(value)}
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, dict):
+        return {str(key): _serialize_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_serialize_value(item) for item in value]
+    return value
+
+
+def _serialize_step_result(result, episode_id: str) -> dict[str, Any]:
+    return {
+        "episode_id": episode_id,
+        "observation": _serialize_value(result.observation),
+        "reward": result.reward,
+        "done": result.done,
+        "info": _serialize_value(getattr(result, "info", {})),
+    }
+
+
+def _schema_for_dataclass(model_type: type) -> dict[str, Any]:
+    return {
+        "name": model_type.__name__,
+        "fields": [
+            {
+                "name": field.name,
+                "type": str(field.type),
+            }
+            for field in fields(model_type)
+        ],
+    }
+
+
+def _get_or_create_openenv_env(episode_id: str) -> CrisisCommanderEnvironment:
+    if episode_id not in OPENENV_ENVS:
+        OPENENV_ENVS[episode_id] = CrisisCommanderEnvironment()
+    return OPENENV_ENVS[episode_id]
+
+
 def _build_app():
-    if FastAPI is None and create_app is None:
+    if FastAPI is None:
         return None
 
-    if create_app is not None:
-        app = create_app(
-            CrisisCommanderEnvironment,
-            CrisisAction,
-            CrisisObservation,
-            env_name="crisis_commander_env",
-        )
-    else:
-        app = FastAPI(title="Crisis Commander")
+    app = FastAPI(title="Crisis Commander")
 
     if CORSMiddleware is not None:
         app.add_middleware(
@@ -74,6 +104,57 @@ def _build_app():
 
     if StaticFiles is not None and STATIC_DIR.exists():
         app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    @app.post("/reset")
+    def openenv_reset(payload: dict[str, Any] = Body(default_factory=dict)):
+        episode_id = str(payload.get("episode_id") or "default")
+        seed = payload.get("seed")
+        options = dict(payload.get("options") or {})
+        if "scenario_id" in payload:
+            options["scenario_id"] = payload["scenario_id"]
+        if "difficulty" in payload:
+            options["difficulty"] = payload["difficulty"]
+
+        env = _get_or_create_openenv_env(episode_id)
+        result = env.reset(seed=seed, options=options)
+        return _serialize_step_result(result, episode_id)
+
+    @app.post("/step")
+    def openenv_step(payload: dict[str, Any] = Body(default_factory=dict)):
+        episode_id = str(payload.get("episode_id") or "default")
+        env = OPENENV_ENVS.get(episode_id)
+        if env is None:
+            raise HTTPException(status_code=404, detail="Episode not found")
+
+        action_payload = payload.get("action") or payload
+        action_payload = {key: value for key, value in action_payload.items() if key != "episode_id"}
+        try:
+            action = CrisisAction(**action_payload)
+        except TypeError as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid action payload: {exc}") from exc
+
+        result = env.step(action)
+        return _serialize_step_result(result, episode_id)
+
+    @app.get("/state")
+    def openenv_state(episode_id: str = "default"):
+        env = OPENENV_ENVS.get(episode_id)
+        if env is None or env.state is None:
+            raise HTTPException(status_code=404, detail="Episode not found")
+        return _serialize_value(env.state)
+
+    @app.get("/schema")
+    def openenv_schema():
+        return {
+            "env_name": "crisis_commander_env",
+            "action": _schema_for_dataclass(CrisisAction),
+            "observation": _schema_for_dataclass(CrisisObservation),
+            "state": _schema_for_dataclass(CrisisState),
+            "defaults": {
+                "scenario_id": "rush_hour_cascade",
+                "difficulty": Difficulty.ADVANCED.value,
+            },
+        }
 
     @app.get("/api/health")
     def health():
