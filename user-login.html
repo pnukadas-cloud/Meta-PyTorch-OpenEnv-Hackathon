@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Login | Crisis Commander</title>
+    <meta
+      name="description"
+      content="User login page for Crisis Commander with email or phone access, forgot password, and password strength guidance."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./static/auth.css?v=2" />
+    <script defer src="./static/auth.js?v=2"></script>
+  </head>
+  <body class="auth-body auth-user" data-role="user">
+    <main class="auth-shell">
+      <nav class="auth-topbar">
+        <div class="auth-brand">
+          <span class="auth-brand-mark"></span>
+          <span class="auth-brand-copy">
+            <strong>Crisis Commander</strong>
+            <small>User access</small>
+          </span>
+        </div>
+        <div class="auth-nav">
+          <a href="./index.html">Dashboard</a>
+          <a href="./admin-login.html">Admin Login</a>
+          <a href="./README.md">README</a>
+        </div>
+      </nav>
+
+      <div class="auth-layout">
+        <section class="auth-card auth-copy">
+          <span class="role-pill">User Login</span>
+          <h1>Standard access for users and field teams.</h1>
+          <p>
+            Sign in with email or phone, recover your password, and review password strength before
+            submitting the form. The flow is designed to stay simple on both desktop and mobile.
+          </p>
+
+          <div class="auth-feature-grid">
+            <article class="auth-feature-card">
+              <strong>Email and phone option</strong>
+              <p>Move between email-based login and mobile-number login with one tap.</p>
+            </article>
+            <article class="auth-feature-card">
+              <strong>Recovery option</strong>
+              <p>Open forgot password to prepare a reset link or reset code from the same page.</p>
+            </article>
+            <article class="auth-feature-card">
+              <strong>Strength feedback</strong>
+              <p>See real-time strength scoring and password rule completion while typing.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="auth-card auth-panel">
+          <div class="auth-panel-head">
+            <div>
+              <h2>User sign in</h2>
+              <p>Enter your credentials to continue into the standard access flow.</p>
+            </div>
+            <a class="switch-link" href="./admin-login.html">Switch to Admin</a>
+          </div>
+
+          <form class="auth-form" id="auth-form" novalidate>
+            <div class="method-switch" role="tablist" aria-label="Login method">
+              <button class="method-button active" type="button" data-auth-method="email">Email</button>
+              <button class="method-button" type="button" data-auth-method="phone">Phone</button>
+            </div>
+
+            <label class="auth-field">
+              <span id="identity-label">Email address</span>
+              <input
+                class="auth-input"
+                id="identity-input"
+                name="identifier"
+                type="email"
+                placeholder="user@example.com"
+                autocomplete="username"
+              />
+              <small id="identity-help">Use the email registered for your standard user account.</small>
+            </label>
+
+            <label class="auth-field">
+              <span>Password</span>
+              <div class="password-row">
+                <input
+                  class="auth-input"
+                  id="password-input"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  autocomplete="current-password"
+                  minlength="8"
+                />
+                <button class="toggle-password" id="toggle-password" type="button">Show</button>
+              </div>
+            </label>
+
+            <div class="strength-card">
+              <div class="strength-head">
+                <strong>Password strength</strong>
+                <span id="strength-label">Start typing</span>
+              </div>
+              <div class="strength-bars" aria-hidden="true">
+                <span class="strength-bar"></span>
+                <span class="strength-bar"></span>
+                <span class="strength-bar"></span>
+                <span class="strength-bar"></span>
+              </div>
+              <ul class="rule-list">
+                <li data-rule="length">At least 8 characters</li>
+                <li data-rule="mixed">Uppercase and lowercase letters</li>
+                <li data-rule="number">At least one number</li>
+                <li data-rule="symbol">At least one special character</li>
+              </ul>
+            </div>
+
+            <div class="auth-row">
+              <label class="remember-wrap">
+                <input type="checkbox" />
+                <span>Keep me signed in</span>
+              </label>
+              <button class="link-button" id="forgot-password-trigger" type="button">Forgot password?</button>
+            </div>
+
+            <button class="auth-submit" id="auth-submit" type="submit">Sign in as user</button>
+            <div class="auth-status hidden" id="auth-status" aria-live="polite"></div>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <div class="recovery-overlay hidden" id="recovery-overlay">
+      <section class="recovery-card">
+        <div class="recovery-head">
+          <div>
+            <h3 id="recovery-title">Recover user password</h3>
+            <p id="recovery-description">Choose email or phone to receive your reset instructions.</p>
+          </div>
+          <button class="modal-close" id="recovery-close" type="button" aria-label="Close recovery dialog">
+            x
+          </button>
+        </div>
+
+        <form class="recovery-form" id="recovery-form" novalidate>
+          <div class="method-switch" role="tablist" aria-label="Recovery method">
+            <button class="method-button active" type="button" data-recovery-method="email">Email</button>
+            <button class="method-button" type="button" data-recovery-method="phone">Phone</button>
+          </div>
+
+          <label class="auth-field">
+            <span id="recovery-label">Email address</span>
+            <input
+              class="recovery-input"
+              id="recovery-input"
+              name="recovery-identifier"
+              type="email"
+              placeholder="user@example.com"
+              autocomplete="email"
+            />
+            <small id="recovery-help">We will send a password reset link.</small>
+          </label>
+
+          <button class="recovery-submit" id="recovery-submit" type="submit">Send reset link</button>
+          <div class="auth-status hidden" id="recovery-status" aria-live="polite"></div>
+        </form>
+      </section>
+    </div>
+  </body>
+</html>

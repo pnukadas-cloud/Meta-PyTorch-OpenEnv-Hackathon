@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./static/styles.css?v=5" />
+    <link rel="stylesheet" href="./static/styles.css?v=6" />
     <script defer src="./static/app.js?v=5"></script>
   </head>
   <body>
@@ -29,6 +29,8 @@
             </span>
           </div>
           <div class="topbar-links">
+            <a href="./admin-login.html">Admin Login</a>
+            <a href="./user-login.html">User Login</a>
             <a href="./README.md">README</a>
           </div>
         </nav>
@@ -42,8 +44,8 @@
               changes turn by turn.
             </p>
             <div class="hero-actions">
-              <a class="primary-button" href="#command-center">Open Dashboard</a>
-              <a class="ghost-button" href="./README.md">Open README</a>
+              <a class="primary-button" href="./admin-login.html">Admin Login</a>
+              <a class="ghost-button" href="./user-login.html">User Login</a>
             </div>
             <div class="metric-strip">
               <article>
@@ -91,6 +93,40 @@
       </header>
 
       <main>
+        <section class="auth-entry">
+          <div class="section-heading">
+            <p class="eyebrow">Access</p>
+            <h2>Choose a login flow</h2>
+            <p>Use the dedicated pages below for admin and user sign in, recovery, and password checks.</p>
+          </div>
+
+          <div class="auth-entry-grid">
+            <article class="panel auth-entry-card admin-entry">
+              <span class="entry-badge">Admin Access</span>
+              <h3>Operations console login</h3>
+              <p>For supervisors, coordinators, and dashboard owners who need elevated access.</p>
+              <ul class="entry-list">
+                <li>Email or phone login</li>
+                <li>Forgot password recovery</li>
+                <li>Live password strength guide</li>
+              </ul>
+              <a class="primary-button" href="./admin-login.html">Open Admin Login</a>
+            </article>
+
+            <article class="panel auth-entry-card user-entry">
+              <span class="entry-badge">User Access</span>
+              <h3>Responder and user login</h3>
+              <p>For standard users, field teams, and anyone entering through the regular access flow.</p>
+              <ul class="entry-list">
+                <li>Email or phone login</li>
+                <li>Forgot password recovery</li>
+                <li>Live password strength guide</li>
+              </ul>
+              <a class="ghost-button" href="./user-login.html">Open User Login</a>
+            </article>
+          </div>
+        </section>
+
         <section class="command-center" id="command-center">
           <div class="section-heading">
             <p class="eyebrow">Session</p>

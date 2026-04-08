@@ -342,6 +342,59 @@ h1 {
   line-height: 1.65;
 }
 
+.auth-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.auth-entry-card {
+  display: grid;
+  gap: 16px;
+  padding: 26px;
+}
+
+.entry-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.auth-entry-card h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.auth-entry-card p {
+  margin: 0;
+  color: #c8d4da;
+  line-height: 1.7;
+}
+
+.entry-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #dce7ec;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-entry {
+  border-color: rgba(255, 180, 84, 0.25);
+}
+
+.user-entry {
+  border-color: rgba(103, 240, 207, 0.22);
+}
+
 .command-layout {
   display: grid;
   grid-template-columns: 330px minmax(0, 1fr);
@@ -659,6 +712,7 @@ h1 {
 
 @media (max-width: 1080px) {
   .hero-grid,
+  .auth-entry-grid,
   .command-layout,
   .status-grid,
   .board-grid,

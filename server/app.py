@@ -34,6 +34,8 @@ except ImportError:
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 INDEX_FILE = ROOT_DIR / "index.html"
+ADMIN_LOGIN_FILE = ROOT_DIR / "admin-login.html"
+USER_LOGIN_FILE = ROOT_DIR / "user-login.html"
 STATIC_DIR = ROOT_DIR / "static"
 
 
@@ -78,6 +80,8 @@ def _build_app():
         return {
             "ok": True,
             "ui": INDEX_FILE.exists(),
+            "admin_login": ADMIN_LOGIN_FILE.exists(),
+            "user_login": USER_LOGIN_FILE.exists(),
             "static": STATIC_DIR.exists(),
         }
 
@@ -128,6 +132,20 @@ def _build_app():
         if not INDEX_FILE.exists():
             raise HTTPException(status_code=503, detail="UI assets are missing from this deployment.")
         return FileResponse(INDEX_FILE)
+
+    @app.get("/admin-login", include_in_schema=False)
+    @app.get("/admin-login.html", include_in_schema=False)
+    def admin_login():
+        if not ADMIN_LOGIN_FILE.exists():
+            raise HTTPException(status_code=503, detail="Admin login page is missing from this deployment.")
+        return FileResponse(ADMIN_LOGIN_FILE)
+
+    @app.get("/user-login", include_in_schema=False)
+    @app.get("/user-login.html", include_in_schema=False)
+    def user_login():
+        if not USER_LOGIN_FILE.exists():
+            raise HTTPException(status_code=503, detail="User login page is missing from this deployment.")
+        return FileResponse(USER_LOGIN_FILE)
 
     @app.get("/", include_in_schema=False)
     def root():

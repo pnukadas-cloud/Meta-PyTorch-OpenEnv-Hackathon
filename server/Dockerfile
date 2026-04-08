@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY pyproject.toml README.md openenv.yaml /app/
 COPY index.html /app/index.html
+COPY admin-login.html /app/admin-login.html
+COPY user-login.html /app/user-login.html
 COPY crisis_commander_env /app/crisis_commander_env
 COPY server /app/server
 COPY static /app/static
