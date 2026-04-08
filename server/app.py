@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import argparse
 from dataclasses import fields, is_dataclass
 from enum import Enum
 from pathlib import Path
@@ -246,13 +247,18 @@ def _build_app():
 app = _build_app()
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     if app is None:
         raise RuntimeError("Install fastapi, pydantic, and uvicorn to run the server.")
 
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8000")))
+    parser = argparse.ArgumentParser(description="Run the Crisis Commander server.")
+    parser.add_argument("--host", default=os.getenv("HOST", "0.0.0.0"))
+    parser.add_argument("--port", type=int, default=int(os.getenv("PORT", "8000")))
+    args = parser.parse_args(argv)
+
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":
