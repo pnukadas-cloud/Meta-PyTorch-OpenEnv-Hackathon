@@ -1,21 +1,6 @@
+spec_version: 1
 name: crisis_commander_env
-title: Crisis Commander
-description: >
-  A multi-objective urban crisis response environment where an agent allocates
-  ambulances, fire engines, police units, drones, hospital surge capacity, and
-  mutual aid under dynamic cascading incidents.
-entrypoint: server.app:app
-package: crisis_commander_env
-default_scenario: rush_hour_cascade
-supported_difficulties:
-  - easy
-  - standard
-  - advanced
-  - expert
-tags:
-  - openenv
-  - reinforcement-learning
-  - emergency-response
-  - multi-objective-optimization
-  - public-systems
-
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000

@@ -51,10 +51,19 @@ class StepSessionRequest(BaseModel):
 
 
 def _build_app():
-    if FastAPI is None:
+    if FastAPI is None and create_app is None:
         return None
 
-    app = FastAPI(title="Crisis Commander")
+    if create_app is not None:
+        app = create_app(
+            CrisisCommanderEnvironment,
+            CrisisAction,
+            CrisisObservation,
+            env_name="crisis_commander_env",
+        )
+    else:
+        app = FastAPI(title="Crisis Commander")
+
     if CORSMiddleware is not None:
         app.add_middleware(
             CORSMiddleware,
@@ -62,15 +71,6 @@ def _build_app():
             allow_methods=["*"],
             allow_headers=["*"],
         )
-
-    if create_app is not None:
-        openenv_app = create_app(
-            CrisisCommanderEnvironment,
-            CrisisAction,
-            CrisisObservation,
-            env_name="crisis_commander_env",
-        )
-        app.mount("/openenv", openenv_app)
 
     if StaticFiles is not None and STATIC_DIR.exists():
         app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -129,6 +129,12 @@ def _build_app():
 
     @app.get("/ui", include_in_schema=False)
     def ui():
+        if not INDEX_FILE.exists():
+            raise HTTPException(status_code=503, detail="UI assets are missing from this deployment.")
+        return FileResponse(INDEX_FILE)
+
+    @app.get("/dashboard", include_in_schema=False)
+    def dashboard():
         if not INDEX_FILE.exists():
             raise HTTPException(status_code=503, detail="UI assets are missing from this deployment.")
         return FileResponse(INDEX_FILE)
