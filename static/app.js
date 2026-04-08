@@ -10,6 +10,8 @@ const state = {
   offlineMode: false,
 };
 
+const AUTH_SESSION_KEY = "crisisCommanderAuthSession";
+
 const fallbackScenarios = [
   {
     id: "rush_hour_cascade",
@@ -252,6 +254,13 @@ const fallbackScenarios = [
 ];
 
 const elements = {
+  authEntry: document.querySelector("#auth-entry"),
+  adminLoginLink: document.querySelector("#admin-login-link"),
+  userLoginLink: document.querySelector("#user-login-link"),
+  authChip: document.querySelector("#auth-chip"),
+  logoutButton: document.querySelector("#logout-button"),
+  heroAdminLink: document.querySelector("#hero-admin-link"),
+  heroUserLink: document.querySelector("#hero-user-link"),
   tabs: document.querySelector("#scenario-tabs"),
   title: document.querySelector("#scenario-title"),
   description: document.querySelector("#scenario-description"),
@@ -295,6 +304,7 @@ const elements = {
 };
 
 async function init() {
+  syncAuthUi();
   bindControls();
   renderLoadingState();
 
@@ -319,6 +329,10 @@ async function init() {
 }
 
 function bindControls() {
+  elements.logoutButton?.addEventListener("click", () => {
+    clearAuthSession();
+    syncAuthUi();
+  });
   elements.prevTurn.addEventListener("click", () => browseHistory(-1));
   elements.nextTurn.addEventListener("click", () => browseHistory(1));
   elements.autoPlay.addEventListener("click", toggleAutoplay);
@@ -478,6 +492,43 @@ function stopAutoplay() {
   if (state.autoplayTimer) {
     window.clearInterval(state.autoplayTimer);
     state.autoplayTimer = null;
+  }
+}
+
+function readAuthSession() {
+  try {
+    const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || (parsed.role !== "admin" && parsed.role !== "user")) {
+      return null;
+    }
+    return parsed;
+  } catch (error) {
+    return null;
+  }
+}
+
+function clearAuthSession() {
+  window.localStorage.removeItem(AUTH_SESSION_KEY);
+}
+
+function syncAuthUi() {
+  const session = readAuthSession();
+  const isLoggedIn = Boolean(session);
+
+  elements.authEntry?.classList.toggle("hidden", isLoggedIn);
+  elements.adminLoginLink?.classList.toggle("hidden", isLoggedIn);
+  elements.userLoginLink?.classList.toggle("hidden", isLoggedIn);
+  elements.heroAdminLink?.classList.toggle("hidden", isLoggedIn);
+  elements.heroUserLink?.classList.toggle("hidden", isLoggedIn);
+  elements.authChip?.classList.toggle("hidden", !isLoggedIn);
+  elements.logoutButton?.classList.toggle("hidden", !isLoggedIn);
+
+  if (session && elements.authChip) {
+    elements.authChip.textContent = `${labelize(session.role)} logged in`;
   }
 }
 

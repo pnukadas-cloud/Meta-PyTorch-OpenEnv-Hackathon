@@ -3,6 +3,8 @@ const authState = {
   recoveryMethod: "email",
 };
 
+const AUTH_SESSION_KEY = "crisisCommanderAuthSession";
+
 const roleContent = {
   admin: {
     loginLabel: "Work email",
@@ -137,6 +139,10 @@ document.addEventListener("DOMContentLoaded", () => {
       role === "admin" ? "Admin login validation passed." : "User login validation passed.",
       "success",
     );
+    persistAuthSession(role, identifier, authState.loginMethod);
+    window.setTimeout(() => {
+      window.location.href = "./index.html";
+    }, 450);
   });
 
   elements.forgotTrigger.addEventListener("click", () => {
@@ -244,4 +250,14 @@ function showStatus(element, message, tone) {
   element.textContent = message;
   element.className = `auth-status ${tone}`;
   element.classList.remove("hidden");
+}
+
+function persistAuthSession(role, identifier, method) {
+  const payload = {
+    role,
+    identifier,
+    method,
+    loggedInAt: new Date().toISOString(),
+  };
+  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(payload));
 }

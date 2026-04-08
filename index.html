@@ -14,8 +14,8 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./static/styles.css?v=6" />
-    <script defer src="./static/app.js?v=5"></script>
+    <link rel="stylesheet" href="./static/styles.css?v=7" />
+    <script defer src="./static/app.js?v=6"></script>
   </head>
   <body>
     <div class="page-shell">
@@ -29,9 +29,10 @@
             </span>
           </div>
           <div class="topbar-links">
-            <a href="./admin-login.html">Admin Login</a>
-            <a href="./user-login.html">User Login</a>
-            <a href="./README.md">README</a>
+            <a href="./admin-login.html" id="admin-login-link">Admin Login</a>
+            <a href="./user-login.html" id="user-login-link">User Login</a>
+            <span class="auth-chip hidden" id="auth-chip"></span>
+            <button class="nav-button hidden" id="logout-button" type="button">Logout</button>
           </div>
         </nav>
 
@@ -44,8 +45,8 @@
               changes turn by turn.
             </p>
             <div class="hero-actions">
-              <a class="primary-button" href="./admin-login.html">Admin Login</a>
-              <a class="ghost-button" href="./user-login.html">User Login</a>
+              <a class="primary-button" href="./admin-login.html" id="hero-admin-link">Admin Login</a>
+              <a class="ghost-button" href="./user-login.html" id="hero-user-link">User Login</a>
             </div>
             <div class="metric-strip">
               <article>
@@ -93,7 +94,7 @@
       </header>
 
       <main>
-        <section class="auth-entry">
+        <section class="auth-entry" id="auth-entry">
           <div class="section-heading">
             <p class="eyebrow">Access</p>
             <h2>Choose a login flow</h2>
