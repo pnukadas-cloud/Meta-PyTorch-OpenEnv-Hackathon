@@ -22,9 +22,21 @@ SEED = int(os.getenv("SEED", "7"))
 MAX_STEPS = int(os.getenv("MAX_STEPS", "8"))
 
 
+def _format_value(value: Any) -> str:
+    if value is None:
+        return "none"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float):
+        return f"{value:.6f}".rstrip("0").rstrip(".")
+    return str(value).replace(" ", "_")
+
+
 def log_event(kind: str, payload: dict[str, Any]) -> None:
-    sys.stdout.write(f"{kind} {json.dumps(payload, separators=(',', ':'))}\n")
-    sys.stdout.flush()
+    serialized = " ".join(
+        f"{key}={_format_value(value)}" for key, value in payload.items()
+    )
+    print(f"[{kind}] {serialized}", flush=True)
 
 
 def http_json(method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -53,7 +65,6 @@ def choose_policy(snapshot: dict[str, Any]) -> str:
     client_kwargs: dict[str, Any] = {"base_url": API_BASE_URL}
     if HF_TOKEN:
         client_kwargs["api_key"] = HF_TOKEN
-    client = OpenAI(**client_kwargs)
     prompt = {
         "summary": snapshot.get("summary"),
         "turn": snapshot.get("turn"),
@@ -64,6 +75,7 @@ def choose_policy(snapshot: dict[str, Any]) -> str:
     }
 
     try:
+        client = OpenAI(**client_kwargs)
         response = client.chat.completions.create(
             model=MODEL_NAME,
             temperature=0,
@@ -95,6 +107,20 @@ def choose_policy(snapshot: dict[str, Any]) -> str:
 
 
 def main() -> None:
+    log_event(
+        "START",
+        {
+            "task": "crisis_commander",
+            "scenario_id": SCENARIO_ID,
+            "difficulty": DIFFICULTY,
+            "seed": SEED,
+            "env_base_url": ENV_BASE_URL,
+            "api_base_url": API_BASE_URL,
+            "model_name": MODEL_NAME,
+            "local_image_name": LOCAL_IMAGE_NAME,
+        },
+    )
+
     session = http_json(
         "POST",
         "/api/sessions",
@@ -105,22 +131,8 @@ def main() -> None:
             "policy": "fairness_aware",
         },
     )
-
     session_id = session["session_id"]
     snapshot = session["snapshot"]
-    log_event(
-        "START",
-        {
-            "session_id": session_id,
-            "scenario_id": SCENARIO_ID,
-            "difficulty": DIFFICULTY,
-            "seed": SEED,
-            "env_base_url": ENV_BASE_URL,
-            "api_base_url": API_BASE_URL,
-            "model_name": MODEL_NAME,
-            "local_image_name": LOCAL_IMAGE_NAME,
-        },
-    )
 
     step_index = 0
     while not snapshot.get("done") and step_index < MAX_STEPS:
@@ -135,11 +147,12 @@ def main() -> None:
         log_event(
             "STEP",
             {
+                "task": "crisis_commander",
                 "step": step_index,
                 "policy": policy,
                 "turn": snapshot.get("turn"),
+                "reward": snapshot.get("step_reward"),
                 "reward_total": snapshot.get("reward_total"),
-                "step_reward": snapshot.get("step_reward"),
                 "verdict": snapshot.get("verdict"),
                 "done": snapshot.get("done"),
             },
@@ -148,12 +161,14 @@ def main() -> None:
     log_event(
         "END",
         {
+            "task": "crisis_commander",
             "session_id": session_id,
+            "steps": step_index,
             "turn": snapshot.get("turn"),
             "done": snapshot.get("done"),
+            "score": snapshot.get("reward_total"),
             "reward_total": snapshot.get("reward_total"),
             "verdict": snapshot.get("verdict"),
-            "metrics": snapshot.get("metrics", {}),
         },
     )
 
@@ -162,8 +177,23 @@ if __name__ == "__main__":
     try:
         main()
     except error.HTTPError as exc:
-        log_event("END", {"status": "error", "code": exc.code, "message": exc.reason})
+        log_event(
+            "END",
+            {
+                "task": "crisis_commander",
+                "status": "error",
+                "code": exc.code,
+                "message": exc.reason,
+            },
+        )
         sys.exit(1)
     except Exception as exc:  # pragma: no cover - CLI failure path
-        log_event("END", {"status": "error", "message": str(exc)})
+        log_event(
+            "END",
+            {
+                "task": "crisis_commander",
+                "status": "error",
+                "message": str(exc),
+            },
+        )
         sys.exit(1)
