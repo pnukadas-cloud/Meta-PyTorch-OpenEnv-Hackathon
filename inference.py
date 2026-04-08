@@ -50,7 +50,10 @@ def fallback_policy(snapshot: dict[str, Any]) -> str:
 
 
 def choose_policy(snapshot: dict[str, Any]) -> str:
-    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN or "EMPTY")
+    client_kwargs: dict[str, Any] = {"base_url": API_BASE_URL}
+    if HF_TOKEN:
+        client_kwargs["api_key"] = HF_TOKEN
+    client = OpenAI(**client_kwargs)
     prompt = {
         "summary": snapshot.get("summary"),
         "turn": snapshot.get("turn"),
