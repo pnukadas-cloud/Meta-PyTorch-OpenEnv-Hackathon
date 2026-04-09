@@ -20,6 +20,11 @@ SCENARIO_ID = os.getenv("SCENARIO_ID", "rush_hour_cascade")
 DIFFICULTY = os.getenv("DIFFICULTY", "advanced")
 SEED = int(os.getenv("SEED", "7"))
 MAX_STEPS = int(os.getenv("MAX_STEPS", "8"))
+TASK_SCENARIOS = [
+    "rush_hour_cascade",
+    "festival_blackout",
+    "industrial_storm",
+]
 
 
 def _format_value(value: Any) -> str:
@@ -106,14 +111,26 @@ def choose_policy(snapshot: dict[str, Any]) -> str:
     return fallback_policy(snapshot)
 
 
-def main() -> None:
+def normalize_score(snapshot: dict[str, Any]) -> float:
+    grade = snapshot.get("grade", {})
+    raw_score = (
+        (float(grade.get("outcome", 0.0)) * 0.35)
+        + (float(grade.get("timeliness", 0.0)) * 0.2)
+        + (float(grade.get("fairness", 0.0)) * 0.2)
+        + (float(grade.get("efficiency", 0.0)) * 0.1)
+        + (float(grade.get("resilience", 0.0)) * 0.15)
+    ) / 100.0
+    return min(0.999, max(0.001, round(raw_score, 6)))
+
+
+def run_task(task_name: str, scenario_id: str, seed: int) -> None:
     log_event(
         "START",
         {
-            "task": "crisis_commander",
-            "scenario_id": SCENARIO_ID,
+            "task": task_name,
+            "scenario_id": scenario_id,
             "difficulty": DIFFICULTY,
-            "seed": SEED,
+            "seed": seed,
             "env_base_url": ENV_BASE_URL,
             "api_base_url": API_BASE_URL,
             "model_name": MODEL_NAME,
@@ -125,9 +142,9 @@ def main() -> None:
         "POST",
         "/api/sessions",
         {
-            "scenario_id": SCENARIO_ID,
+            "scenario_id": scenario_id,
             "difficulty": DIFFICULTY,
-            "seed": SEED,
+            "seed": seed,
             "policy": "fairness_aware",
         },
     )
@@ -147,7 +164,7 @@ def main() -> None:
         log_event(
             "STEP",
             {
-                "task": "crisis_commander",
+                "task": task_name,
                 "step": step_index,
                 "policy": policy,
                 "turn": snapshot.get("turn"),
@@ -161,16 +178,27 @@ def main() -> None:
     log_event(
         "END",
         {
-            "task": "crisis_commander",
+            "task": task_name,
+            "scenario_id": scenario_id,
             "session_id": session_id,
             "steps": step_index,
             "turn": snapshot.get("turn"),
             "done": snapshot.get("done"),
-            "score": snapshot.get("reward_total"),
+            "score": normalize_score(snapshot),
             "reward_total": snapshot.get("reward_total"),
             "verdict": snapshot.get("verdict"),
         },
     )
+
+
+def main() -> None:
+    scenario_ids = list(dict.fromkeys([SCENARIO_ID, *TASK_SCENARIOS]))
+    for index, scenario_id in enumerate(scenario_ids[:3]):
+        run_task(
+            task_name=f"crisis_commander_{scenario_id}",
+            scenario_id=scenario_id,
+            seed=SEED + index,
+        )
 
 
 if __name__ == "__main__":
@@ -180,7 +208,7 @@ if __name__ == "__main__":
         log_event(
             "END",
             {
-                "task": "crisis_commander",
+                "task": "crisis_commander_submission",
                 "status": "error",
                 "code": exc.code,
                 "message": exc.reason,
@@ -191,7 +219,7 @@ if __name__ == "__main__":
         log_event(
             "END",
             {
-                "task": "crisis_commander",
+                "task": "crisis_commander_submission",
                 "status": "error",
                 "message": str(exc),
             },
